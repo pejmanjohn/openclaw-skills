@@ -2,6 +2,15 @@
 
 Use this page when exec, browser, plugin-backed tools, or node capabilities fail after the session otherwise appears healthy.
 
+## Contents
+
+- Separate the failure class
+- Core checks
+- Exec approvals
+- Browser issues
+- Nodes
+- Plugins
+
 ## Separate the failure class
 
 - Tool approval or policy problem

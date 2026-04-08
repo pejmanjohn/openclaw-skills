@@ -2,6 +2,14 @@
 
 Use these to verify that the skill routes correctly and asks for evidence that can actually confirm or falsify a diagnosis.
 
+## Contents
+
+- Missing command from website docs
+- Dashboard opens but cannot authenticate
+- Connected channel with no replies
+- Config change had no effect
+- Node capability fails after pairing
+
 ## Scenario: missing command from website docs
 
 Prompt:

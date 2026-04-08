@@ -2,6 +2,14 @@
 
 Use this page when a channel appears configured or connected but delivery is wrong, missing, or inconsistent.
 
+## Contents
+
+- Transport versus delivery
+- Core checks
+- Allowlists and mention gating
+- Pairing
+- Connected but no replies
+
 ## Transport versus delivery
 
 Separate these questions:

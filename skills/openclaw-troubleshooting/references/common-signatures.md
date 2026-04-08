@@ -2,6 +2,14 @@
 
 Use this page as a terse signature to next-action map.
 
+## Contents
+
+- Signature table
+- Version drift
+- Gateway and auth signatures
+- Channel and node signatures
+- Env and service signatures
+
 | Signature or symptom | Next action |
 | --- | --- |
 | command in docs is missing locally | Run `openclaw --version`, `openclaw help`, and the specific subcommand help. Treat as version drift first. |

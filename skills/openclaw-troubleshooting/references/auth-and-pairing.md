@@ -2,6 +2,14 @@
 
 Use this page when the failure is about who is allowed to connect or act, rather than whether transport exists.
 
+## Contents
+
+- Common branches
+- DM pairing
+- Device pairing
+- Token mismatch
+- launchctl and service env overrides
+
 ## Common branches
 
 - DM pairing pending or denied

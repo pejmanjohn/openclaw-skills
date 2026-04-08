@@ -2,6 +2,14 @@
 
 Use this page when behavior suggests OpenClaw is reading a different config than expected, the config is invalid, or changes are not taking effect.
 
+## Contents
+
+- Active config path
+- Validation flow
+- Safe edits
+- Schema and get workflow
+- Env override confusion
+
 ## Active config path
 
 Start with:

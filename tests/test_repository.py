@@ -60,3 +60,23 @@ class SkillMetadataTests(unittest.TestCase):
             "validation-scenarios.md",
         ]:
             self.assertIn(name, text)
+
+    def test_reference_files_exist_and_include_core_invariants(self) -> None:
+        references = ROOT / "skills" / "openclaw-troubleshooting" / "references"
+        expected = {
+            "triage.md": ["# Triage", "## Contents", "## First 60 seconds", "openclaw status --all"],
+            "gateway.md": ["# Gateway", "## Contents", "## Core checks", "openclaw gateway probe"],
+            "config.md": ["# Config", "## Contents", "## Active config path", "openclaw config file"],
+            "channels.md": ["# Channels", "## Contents", "## Core checks", "openclaw channels status --probe"],
+            "tools-and-nodes.md": ["# Tools And Nodes", "## Contents", "## Core checks", "## Exec approvals"],
+            "auth-and-pairing.md": ["# Auth And Pairing", "## Contents", "## DM pairing", "## Device pairing"],
+            "common-signatures.md": ["# Common Signatures", "## Contents", "| Signature or symptom | Next action |", "gateway probe"],
+            "validation-scenarios.md": ["# Validation Scenarios", "## Contents", "## Scenario: missing command from website docs", "Pass expectations:"],
+        }
+        for name, phrases in expected.items():
+            path = references / name
+            with self.subTest(reference=name):
+                self.assertTrue(path.is_file(), f"missing reference {name}")
+                text = path.read_text()
+                for phrase in phrases:
+                    self.assertIn(phrase, text)

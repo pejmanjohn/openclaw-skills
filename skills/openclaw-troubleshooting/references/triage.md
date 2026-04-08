@@ -2,6 +2,14 @@
 
 Use this page for the first minute of diagnosis and to decide which deeper runbook to open.
 
+## Contents
+
+- First 60 seconds
+- Healthy signals
+- Fast classification
+- Local env and path overrides
+- Drift rule
+
 ## First 60 seconds
 
 Run, in order:

@@ -2,6 +2,15 @@
 
 Use this page for gateway runtime, probe, dashboard or Control UI connectivity, auth mode issues, and upgrade-related breakage.
 
+## Contents
+
+- Core checks
+- Service and runtime
+- Probe and status interpretation
+- Dashboard and Control UI
+- Auth and token drift
+- Upgrade breakage
+
 ## Core checks
 
 ```bash
