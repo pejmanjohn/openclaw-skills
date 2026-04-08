@@ -49,7 +49,7 @@ Read only the file that matches the observed symptom:
 - If local output and `docs.openclaw.ai` differ, state the version drift explicitly and prefer the installed binary for runtime behavior.
 - Do not claim a fix without rerunning the relevant command or scenario.
 
-## Tooling and fallback notes
+## Tooling/fallback notes
 
 - Prefer shell inspection of local config, logs, service state, and command help before browsing docs.
 - Use `docs.openclaw.ai` to understand the latest intended workflow, migration notes, or renamed commands, then verify those steps locally with `openclaw help`.

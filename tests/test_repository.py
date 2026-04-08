@@ -36,6 +36,17 @@ class SkillMetadataTests(unittest.TestCase):
         ]:
             self.assertIn(needle, text)
 
+    def test_skill_includes_required_top_level_sections(self) -> None:
+        text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
+        for heading in [
+            "## Quick start",
+            "## Workflow",
+            "## Reference map",
+            "## Quality rules",
+            "## Tooling/fallback notes",
+        ]:
+            self.assertIn(heading, text)
+
     def test_reference_map_mentions_each_reference_file(self) -> None:
         text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
         for name in [
