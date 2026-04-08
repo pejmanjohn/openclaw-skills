@@ -11,6 +11,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 class RepositoryShapeTests(unittest.TestCase):
     def test_task1_directory_skeleton_exists(self) -> None:
         expected = [
+            ROOT / "scripts",
             ROOT / "skills" / "openclaw-troubleshooting",
             ROOT / "skills" / "openclaw-troubleshooting" / "references",
             ROOT / "skills" / "openclaw-troubleshooting" / "scripts",
@@ -119,15 +120,20 @@ class RepositoryDocumentationTests(unittest.TestCase):
             "local binary/help/config/state/logs",
             "docs.openclaw.ai",
             "latest release",
+            "Recommended Install Pattern",
+            "git -C ~/src/openclaw-skills pull",
             "Workspace: `<workspace>/skills`",
             "Project agent skills: `<workspace>/.agents/skills`",
             "Personal agent skills: `~/.agents/skills`",
             "Managed/local: `~/.openclaw/skills`",
             "Install with OpenClaw",
+            "install-openclaw-skill.sh",
             "Install with Codex",
             "~/.codex/skills",
+            "install-codex-skill.sh",
             "restart Codex",
             "Install with Claude Code",
+            "install-claude-skill.sh",
             ".claude/skills/openclaw-troubleshooting/SKILL.md",
             "Future expansion",
         ]:
@@ -145,6 +151,50 @@ class RepositoryDocumentationTests(unittest.TestCase):
         self.assertIn("description:", text)
         self.assertNotIn("disable-model-invocation", text)
         self.assertNotIn("allowed-tools", text)
+
+
+class InstallScriptTests(unittest.TestCase):
+    def test_codex_install_script_creates_symlink_in_codex_home(self) -> None:
+        script = ROOT / "scripts" / "install-codex-skill.sh"
+        with tempfile.TemporaryDirectory() as td:
+            codex_home = pathlib.Path(td) / "codex-home"
+            env = os.environ.copy()
+            env["HOME"] = td
+            env["CODEX_HOME"] = str(codex_home)
+            result = subprocess.run(["/bin/sh", str(script)], capture_output=True, text=True, env=env)
+            target = codex_home / "skills" / "openclaw-troubleshooting"
+            self.assertEqual(result.returncode, 0)
+            self.assertTrue(target.is_symlink())
+            self.assertEqual(target.resolve(), ROOT / "skills" / "openclaw-troubleshooting")
+
+    def test_claude_install_script_creates_symlink_in_requested_dir(self) -> None:
+        script = ROOT / "scripts" / "install-claude-skill.sh"
+        with tempfile.TemporaryDirectory() as td:
+            dest_dir = pathlib.Path(td) / "project" / ".claude" / "skills"
+            env = os.environ.copy()
+            env["HOME"] = td
+            result = subprocess.run(
+                ["/bin/sh", str(script), "--dest", str(dest_dir)],
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+            target = dest_dir / "openclaw-troubleshooting"
+            self.assertEqual(result.returncode, 0)
+            self.assertTrue(target.is_symlink())
+            self.assertEqual(target.resolve(), ROOT / "skills" / "openclaw-troubleshooting")
+
+    def test_openclaw_install_script_creates_symlink_in_override_dir(self) -> None:
+        script = ROOT / "scripts" / "install-openclaw-skill.sh"
+        with tempfile.TemporaryDirectory() as td:
+            env = os.environ.copy()
+            env["HOME"] = td
+            env["OPENCLAW_SKILLS_DIR"] = str(pathlib.Path(td) / "openclaw-skills")
+            result = subprocess.run(["/bin/sh", str(script)], capture_output=True, text=True, env=env)
+            target = pathlib.Path(env["OPENCLAW_SKILLS_DIR"]) / "openclaw-troubleshooting"
+            self.assertEqual(result.returncode, 0)
+            self.assertTrue(target.is_symlink())
+            self.assertEqual(target.resolve(), ROOT / "skills" / "openclaw-troubleshooting")
 
 
 class DiagnosticsScriptTests(unittest.TestCase):

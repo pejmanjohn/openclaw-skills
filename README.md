@@ -38,6 +38,25 @@ The source of truth lives in one place:
 
 `skills/openclaw-troubleshooting/agents/openai.yaml` is optional Codex metadata only. It is intentionally thin and does not replace `SKILL.md`.
 
+## Recommended Install Pattern
+
+Keep a normal source checkout of this repo somewhere stable, then install the skill from that checkout with a small helper script.
+
+Example local checkout:
+
+```bash
+mkdir -p ~/src
+git clone /path/to/this/repo ~/src/openclaw-skills
+```
+
+The install helpers create symlinks into the right skill directory, so updates are simple:
+
+```bash
+git -C ~/src/openclaw-skills pull
+```
+
+If you are already working inside a checkout of this repo, run the install helpers from that checkout instead of recloning.
+
 ## How OpenClaw Finds Skills
 
 OpenClaw loads skills from these locations, highest precedence first:
@@ -53,36 +72,30 @@ That means you can keep one canonical skill folder in this repo and install it i
 
 ## Install with OpenClaw
 
-If you want OpenClaw itself to load the skill, symlink or copy the canonical folder into one of OpenClaw's skill locations.
-
-From the repo root:
+If you want OpenClaw itself to load the skill, the recommended path is the shared local skill directory:
 
 ```bash
-REPO_ROOT="$(pwd)"
-mkdir -p ~/.openclaw/skills
-ln -s "$REPO_ROOT/skills/openclaw-troubleshooting" ~/.openclaw/skills/openclaw-troubleshooting
+~/src/openclaw-skills/scripts/install-openclaw-skill.sh
 ```
 
-For a workspace-only install, place it in the active OpenClaw workspace instead:
+For a workspace-only install, point the helper at the workspace `skills/` directory:
 
 ```bash
-REPO_ROOT="$(pwd)"
 WORKSPACE="/path/to/openclaw-workspace"
-mkdir -p "$WORKSPACE/skills"
-ln -s "$REPO_ROOT/skills/openclaw-troubleshooting" "$WORKSPACE/skills/openclaw-troubleshooting"
+~/src/openclaw-skills/scripts/install-openclaw-skill.sh --dest "$WORKSPACE/skills"
 ```
 
 ## Install with Codex
 
-Codex can use the same canonical folder; no Codex-only copy is needed. Install it into `$CODEX_HOME/skills` or `~/.codex/skills`, then restart Codex so it picks up the new skill.
+Codex can use the same canonical folder; no Codex-only copy is needed. The recommended local install path is `$CODEX_HOME/skills` or `~/.codex/skills`.
 
-From the repo root:
+From a local checkout:
 
 ```bash
-REPO_ROOT="$(pwd)"
-mkdir -p ~/.codex/skills
-ln -s "$REPO_ROOT/skills/openclaw-troubleshooting" ~/.codex/skills/openclaw-troubleshooting
+~/src/openclaw-skills/scripts/install-codex-skill.sh
 ```
+
+Then restart Codex so it reloads the installed skill.
 
 `skills/openclaw-troubleshooting/agents/openai.yaml` is optional metadata only. The canonical instructions remain in `SKILL.md`.
 
@@ -90,20 +103,17 @@ ln -s "$REPO_ROOT/skills/openclaw-troubleshooting" ~/.codex/skills/openclaw-trou
 
 Claude Code uses the same `SKILL.md` shape and supporting files, but it discovers project skills from `.claude/skills/<skill-name>/SKILL.md` and personal skills from `~/.claude/skills/<skill-name>/SKILL.md`.
 
-Install the same canonical folder into either location:
+For a personal install:
 
 ```bash
-REPO_ROOT="$(pwd)"
-mkdir -p .claude/skills
-ln -s "$REPO_ROOT/skills/openclaw-troubleshooting" .claude/skills/openclaw-troubleshooting
+~/src/openclaw-skills/scripts/install-claude-skill.sh
 ```
 
-or:
+For a project-local install:
 
 ```bash
-REPO_ROOT="$(pwd)"
-mkdir -p ~/.claude/skills
-ln -s "$REPO_ROOT/skills/openclaw-troubleshooting" ~/.claude/skills/openclaw-troubleshooting
+PROJECT_ROOT="/path/to/project"
+~/src/openclaw-skills/scripts/install-claude-skill.sh --dest "$PROJECT_ROOT/.claude/skills"
 ```
 
 Supporting files next to `SKILL.md` are allowed, so the same `references/` and `scripts/` layout can be reused without creating a second skill source.
