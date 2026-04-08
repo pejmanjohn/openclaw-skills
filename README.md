@@ -38,25 +38,6 @@ The source of truth lives in one place:
 
 `skills/openclaw-troubleshooting/agents/openai.yaml` is optional Codex metadata only. It is intentionally thin and does not replace `SKILL.md`.
 
-## Recommended Install Pattern
-
-Keep a normal source checkout of this repo somewhere stable, then install the skill from that checkout with a small helper script.
-
-Example local checkout:
-
-```bash
-mkdir -p ~/src
-git clone /path/to/this/repo ~/src/openclaw-skills
-```
-
-The install helpers create symlinks into the right skill directory, so updates are simple:
-
-```bash
-git -C ~/src/openclaw-skills pull
-```
-
-If you are already working inside a checkout of this repo, run the install helpers from that checkout instead of recloning.
-
 ## How OpenClaw Finds Skills
 
 OpenClaw loads skills from these locations, highest precedence first:
@@ -70,28 +51,44 @@ OpenClaw loads skills from these locations, highest precedence first:
 
 That means you can keep one canonical skill folder in this repo and install it into whichever of those locations makes sense for your workflow. Workspace-local installation is best when the skill should apply only to the current project. Shared installation is best when you want it available everywhere on the machine.
 
-## Install with OpenClaw
+## OpenClaw: Install
 
-If you want OpenClaw itself to load the skill, the recommended path is the shared local skill directory:
+If you want OpenClaw itself to load the skill, the recommended path is a source checkout managed at `~/src/openclaw-skills` plus a symlink into `~/.openclaw/skills`:
 
 ```bash
+mkdir -p ~/src
+git clone https://github.com/pejmanjohn/openclaw-skills.git ~/src/openclaw-skills
 ~/src/openclaw-skills/scripts/install-openclaw-skill.sh
 ```
 
-For a workspace-only install, point the helper at the workspace `skills/` directory:
+Update to the latest version with:
+
+```bash
+git -C ~/src/openclaw-skills pull
+~/src/openclaw-skills/scripts/install-openclaw-skill.sh
+```
+
+If you want a workspace-local OpenClaw install instead of the shared machine-wide path, use:
 
 ```bash
 WORKSPACE="/path/to/openclaw-workspace"
 ~/src/openclaw-skills/scripts/install-openclaw-skill.sh --dest "$WORKSPACE/skills"
 ```
 
-## Install with Codex
+## Codex: Install
 
-Codex can use the same canonical folder; no Codex-only copy is needed. The recommended local install path is `$CODEX_HOME/skills` or `~/.codex/skills`.
-
-From a local checkout:
+For Codex, the recommended local install path is a source checkout at `~/src/openclaw-skills` plus a symlink into `$CODEX_HOME/skills` or `~/.codex/skills`:
 
 ```bash
+mkdir -p ~/src
+git clone https://github.com/pejmanjohn/openclaw-skills.git ~/src/openclaw-skills
+~/src/openclaw-skills/scripts/install-codex-skill.sh
+```
+
+Update to the latest version with:
+
+```bash
+git -C ~/src/openclaw-skills pull
 ~/src/openclaw-skills/scripts/install-codex-skill.sh
 ```
 
@@ -99,25 +96,31 @@ Then restart Codex so it reloads the installed skill.
 
 `skills/openclaw-troubleshooting/agents/openai.yaml` is optional metadata only. The canonical instructions remain in `SKILL.md`.
 
-## Install with Claude Code
+## Claude Code: Install
 
-Claude Code uses the same `SKILL.md` shape and supporting files, but it discovers project skills from `.claude/skills/<skill-name>/SKILL.md` and personal skills from `~/.claude/skills/<skill-name>/SKILL.md`.
-
-For a personal install:
+For Claude Code, the recommended local install path is a source checkout at `~/src/openclaw-skills` plus a symlink into `~/.claude/skills`:
 
 ```bash
+mkdir -p ~/src
+git clone https://github.com/pejmanjohn/openclaw-skills.git ~/src/openclaw-skills
 ~/src/openclaw-skills/scripts/install-claude-skill.sh
 ```
 
-For a project-local install:
+Update to the latest version with:
+
+```bash
+git -C ~/src/openclaw-skills pull
+~/src/openclaw-skills/scripts/install-claude-skill.sh
+```
+
+For a project-local Claude install instead of a personal install, use:
 
 ```bash
 PROJECT_ROOT="/path/to/project"
 ~/src/openclaw-skills/scripts/install-claude-skill.sh --dest "$PROJECT_ROOT/.claude/skills"
 ```
 
-Supporting files next to `SKILL.md` are allowed, so the same `references/` and `scripts/` layout can be reused without creating a second skill source.
-The canonical entrypoint is `.claude/skills/openclaw-troubleshooting/SKILL.md` in a project install or `~/.claude/skills/openclaw-troubleshooting/SKILL.md` in a personal install.
+Supporting files next to `SKILL.md` are allowed, so the same `references/` and `scripts/` layout can be reused without creating a second skill source. The canonical entrypoint is `.claude/skills/openclaw-troubleshooting/SKILL.md` in a project install or `~/.claude/skills/openclaw-troubleshooting/SKILL.md` in a personal install.
 
 ## Agent-Neutral Vs Agent-Specific
 
