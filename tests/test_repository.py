@@ -14,4 +14,16 @@ class RepositoryShapeTests(unittest.TestCase):
             ROOT / "skills" / "openclaw-troubleshooting" / "scripts" / "collect-openclaw-diagnostics.sh",
         ]
         for path in expected:
-            self.assertTrue(path.exists(), f"missing {path.relative_to(ROOT)}")
+            with self.subTest(path=path.relative_to(ROOT)):
+                self.assertTrue(path.exists(), f"missing {path.relative_to(ROOT)}")
+
+    def test_task1_directory_skeleton_exists(self) -> None:
+        expected = [
+            ROOT / "skills" / "openclaw-troubleshooting",
+            ROOT / "skills" / "openclaw-troubleshooting" / "references",
+            ROOT / "skills" / "openclaw-troubleshooting" / "scripts",
+            ROOT / "skills" / "openclaw-troubleshooting" / "agents",
+        ]
+        for path in expected:
+            with self.subTest(path=path.relative_to(ROOT)):
+                self.assertTrue(path.is_dir(), f"missing directory {path.relative_to(ROOT)}")
