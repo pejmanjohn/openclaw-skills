@@ -1,4 +1,7 @@
+import os
 import pathlib
+import subprocess
+import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -80,3 +83,24 @@ class SkillMetadataTests(unittest.TestCase):
                 text = path.read_text()
                 for phrase in phrases:
                     self.assertIn(phrase, text)
+
+
+class DiagnosticsScriptTests(unittest.TestCase):
+    def test_script_shows_missing_binary_message(self) -> None:
+        script = ROOT / "skills" / "openclaw-troubleshooting" / "scripts" / "collect-openclaw-diagnostics.sh"
+        result = subprocess.run(["bash", str(script)], capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("openclaw", result.stderr + result.stdout)
+
+    def test_script_runs_read_only_ladder_against_fake_binary(self) -> None:
+        script = ROOT / "skills" / "openclaw-troubleshooting" / "scripts" / "collect-openclaw-diagnostics.sh"
+        with tempfile.TemporaryDirectory() as td:
+            fake = pathlib.Path(td) / "openclaw"
+            fake.write_text("#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo 'openclaw 0.0-test'; exit 0; fi\necho \"CMD:$*\"\n")
+            fake.chmod(0o755)
+            env = os.environ.copy()
+            env["PATH"] = f"{td}:{env['PATH']}"
+            result = subprocess.run(["bash", str(script)], capture_output=True, text=True, env=env)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("CMD:status", result.stdout)
+        self.assertIn("CMD:config file", result.stdout)
