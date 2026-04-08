@@ -5,6 +5,11 @@ set -u
 FOLLOW_LOGS=0
 FOLLOW_SECONDS=5
 
+if ! command -v openclaw >/dev/null 2>&1; then
+    echo "Missing required binary: openclaw" >&2
+    exit 1
+fi
+
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --follow-logs)
@@ -17,6 +22,12 @@ while [ "$#" -gt 0 ]; do
                 exit 2
             fi
             FOLLOW_SECONDS="$1"
+            case "$FOLLOW_SECONDS" in
+                ''|*[!0-9]*|0)
+                    echo "Invalid value for --follow-seconds: $FOLLOW_SECONDS (must be a positive integer)" >&2
+                    exit 2
+                    ;;
+            esac
             ;;
         -h|--help)
             echo "Usage: $0 [--follow-logs] [--follow-seconds N]"
@@ -29,11 +40,6 @@ while [ "$#" -gt 0 ]; do
     esac
     shift
 done
-
-if ! command -v openclaw >/dev/null 2>&1; then
-    echo "Missing required binary: openclaw" >&2
-    exit 1
-fi
 
 print_section() {
     printf '\n== %s ==\n' "$1"
@@ -64,11 +70,34 @@ follow_logs() {
         return
     fi
 
-    openclaw logs --follow &
-    pid=$!
-    sleep "$FOLLOW_SECONDS"
-    kill "$pid" >/dev/null 2>&1 || true
-    wait "$pid" 2>/dev/null || true
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - "$FOLLOW_SECONDS" <<'PY'
+import os
+import signal
+import subprocess
+import sys
+
+seconds = int(sys.argv[1])
+proc = subprocess.Popen(["openclaw", "logs", "--follow"], start_new_session=True)
+try:
+    sys.exit(proc.wait(timeout=seconds))
+except subprocess.TimeoutExpired:
+    os.killpg(proc.pid, signal.SIGTERM)
+    try:
+        proc.wait(timeout=2)
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        proc.wait()
+    sys.exit(0)
+PY
+        status=$?
+        if [ "$status" -ne 0 ]; then
+            printf '[exit %s]\n' "$status"
+        fi
+        return
+    fi
+
+    printf 'Skipping log follow: requires timeout or python3 for bounded execution.\n'
 }
 
 print_section "OpenClaw diagnostics"

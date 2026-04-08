@@ -1,6 +1,6 @@
 ---
 name: openclaw-troubleshooting
-description: Use when OpenClaw is failing or behaving unexpectedly and you need a canonical, local-first troubleshooting path for gateway, dashboard, channels, auth, pairing, config, tools, nodes, or plugins.
+description: Use when OpenClaw install/setup, gateway, dashboard/control UI, no-replies channels, auth/pairing, config, exec approvals, tool/node, or plugins need troubleshooting, diagnosis, repair, or safe reconfiguration.
 ---
 
 # OpenClaw Troubleshooting
