@@ -1,4 +1,4 @@
-# openclaw-skills
+# 🦞 openclaw-skills
 
 This repository is the canonical source for OpenClaw skills in this public repo. v1 ships one skill, `openclaw-troubleshooting`, so agents can diagnose and repair a broken OpenClaw install before anything else.
 
