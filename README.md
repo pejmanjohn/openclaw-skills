@@ -19,22 +19,24 @@ The first skill is troubleshooting-focused because that is the fastest way to ma
 
 ## Compounding Knowledge
 
-Most troubleshooting skills are static: they ship a fixed set of instructions and never learn from the incidents they help resolve. This repo is designed to get smarter over time.
+Most troubleshooting skills are static: they ship a fixed set of instructions and never learn from the incidents they help resolve. This repo is designed to get smarter over time — for **each user individually**.
 
 The cycle works like this:
 
 **Diagnose → Fix → Compound → Repeat**
 
-After resolving an incident, the troubleshooting skill suggests running `/openclaw-troubleshooting-compound`. That companion skill reviews what just happened in the conversation — symptoms, dead ends, root cause, fix — and drafts a structured entry for the [incident log](skills/openclaw-troubleshooting/references/incident-log.md) and any new error signatures for [common-signatures.md](skills/openclaw-troubleshooting/references/common-signatures.md). You review the draft, confirm, and the learnings are applied. No manual writing required.
+After resolving an incident, the troubleshooting skill suggests running `/openclaw-troubleshooting-compound`. That companion skill reviews what just happened in the conversation — symptoms, dead ends, root cause, fix — and drafts a structured entry for your **local** [incident log](skills/openclaw-troubleshooting/references/incident-log.md) and any new error signatures for [common-signatures.md](skills/openclaw-troubleshooting/references/common-signatures.md). You review the draft, confirm, and the learnings are written to your installed copy. No manual writing required.
 
-The next time the troubleshooting skill triggers, it reads the incident log before starting diagnosis, so it arrives with the full history of past gotchas instead of starting from zero.
+The next time the troubleshooting skill triggers, it reads the incident log before starting diagnosis, so it arrives with the full history of **your** past incidents instead of starting from zero.
+
+### Why local, not upstream?
+
+The most useful troubleshooting knowledge is specific: your exact ports, profile names, config paths, service labels, the commands that worked on your machine. Generic patterns are already in the skill's reference files. The incident log is where your environment's quirks accumulate — the things no upstream documentation could anticipate.
 
 This means:
-- The first time you hit a profile mismatch, you spend 30 minutes chasing the wrong config file. The second time, the skill already knows the pattern and skips straight to the fix.
-- Error signatures that required investigation once become instant lookups.
-- Edge cases that no documentation covers — because they only emerge from real incidents — accumulate as institutional knowledge.
-
-The skill doesn't learn autonomously. **You** close the loop with a single confirmation. The skills handle the drafting, generalization, and file updates.
+- The repo ships with seed entries covering common patterns. Your local copy diverges as you resolve incidents in your own environment.
+- The first time you hit a problem, you work through it. The second time, the skill already has your exact fix — paths, ports, and all.
+- Error signatures that required investigation once become instant lookups with your specific next-action steps.
 
 ### How it works
 
@@ -46,34 +48,15 @@ The skill doesn't learn autonomously. **You** close the loop with a single confi
 │  2. Diagnose & fix      │────▶│  1. Review conversation      │
 │  3. Suggest /compound   │     │  2. Draft incident-log entry │
 │                         │     │  3. Draft new signatures     │
-└─────────────────────────┘     │  4. Generalize (strip        │
-                                │     machine-specific details) │
+└─────────────────────────┘     │  4. Check for duplicates     │
                                 │  5. Present for confirmation │
-                                │  6. Apply on approval        │
+                                │  6. Write to local install   │
                                 └──────────────────────────────┘
 ```
 
-### Contributing learnings manually
+### Contributing upstream
 
-If you prefer to write entries by hand or want to contribute learnings from outside a live session, append to `references/incident-log.md`:
-
-```markdown
-## Short description of the incident
-
-**Precondition:** (optional) Setup-specific conditions that make this relevant.
-
-**Symptoms:** What the user saw.
-
-**Root cause:** What was actually wrong.
-
-**What didn't work:** Approaches that failed or wasted time.
-
-**What fixed it:** The actual fix, step by step.
-
-**Prevention:** How to avoid this in the future.
-```
-
-Keep entries general — describe patterns, not machine-specific details. If a gotcha only applies to a specific setup, note the precondition so others can judge relevance.
+If you resolve an incident that reveals a **general pattern** other users would benefit from, you can contribute it back. Generalize the entry (replace machine-specific details with placeholders) and open a PR to `references/incident-log.md` or `references/common-signatures.md`.
 
 ## Local First, Version Aware
 
