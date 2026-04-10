@@ -17,6 +17,45 @@ This repo focuses on local, evidence-based troubleshooting for:
 
 The first skill is troubleshooting-focused because that is the fastest way to make the repo useful on day one. When OpenClaw is running on the same machine as the agent, local binary/help/config/state/logs are more trustworthy than assumptions or the latest docs alone.
 
+## Compounding Knowledge
+
+Most troubleshooting skills are static: they ship a fixed set of instructions and never learn from the incidents they help resolve. This skill is designed to get smarter over time.
+
+The cycle works like this:
+
+**Diagnose → Fix → Document → Compound → Repeat**
+
+Each resolved incident produces a structured entry in the [incident log](skills/openclaw-troubleshooting/references/incident-log.md) — symptoms, root cause, what didn't work, what fixed it, and how to prevent it next time. The next time the skill triggers, it reads that log before starting diagnosis, so it arrives with the full history of past gotchas instead of starting from zero.
+
+This means:
+- The first time you hit a profile mismatch, you spend 30 minutes chasing the wrong config file. The second time, the skill already knows the pattern and skips straight to the fix.
+- Error signatures that required investigation once become instant lookups in [common-signatures.md](skills/openclaw-troubleshooting/references/common-signatures.md).
+- Edge cases that no documentation covers — because they only emerge from real incidents — accumulate as institutional knowledge.
+
+The skill doesn't learn autonomously. **You** close the loop by appending what you learned after each incident. The skill just makes sure that knowledge is loaded at the right moment — the start of every future troubleshooting session.
+
+### Contributing learnings
+
+After resolving an incident, append an entry to `references/incident-log.md`:
+
+```markdown
+## Short description of the incident
+
+**Precondition:** (optional) Setup-specific conditions that make this relevant.
+
+**Symptoms:** What the user saw.
+
+**Root cause:** What was actually wrong.
+
+**What didn't work:** Approaches that failed or wasted time.
+
+**What fixed it:** The actual fix, step by step.
+
+**Prevention:** How to avoid this in the future.
+```
+
+Keep entries general — describe patterns, not machine-specific details. If a gotcha only applies to a specific setup, note the precondition so others can judge relevance.
+
 ## Local First, Version Aware
 
 Use the installed OpenClaw binary as runtime truth:
@@ -32,9 +71,13 @@ Treat [docs.openclaw.ai](https://docs.openclaw.ai/) as procedural truth for the 
 
 The source of truth lives in one place:
 
-- `skills/openclaw-troubleshooting/SKILL.md`
-- `skills/openclaw-troubleshooting/references/`
-- `skills/openclaw-troubleshooting/scripts/`
+- `skills/openclaw-troubleshooting/SKILL.md` — entrypoint and routing logic
+- `skills/openclaw-troubleshooting/references/` — deep reference files per symptom class
+  - `incident-log.md` — compounding knowledge from resolved incidents
+  - `common-signatures.md` — error string → next action lookup table
+  - `validation-scenarios.md` — behavioral test scenarios for the skill
+  - `triage.md`, `gateway.md`, `config.md`, `channels.md`, `auth-and-pairing.md`, `tools-and-nodes.md` — domain runbooks
+- `skills/openclaw-troubleshooting/scripts/` — helper scripts for diagnostics
 
 `skills/openclaw-troubleshooting/agents/openai.yaml` is optional Codex metadata only. It is intentionally thin and does not replace `SKILL.md`.
 
