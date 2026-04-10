@@ -9,7 +9,10 @@ Treat the local machine as the primary evidence source. The agent and OpenClaw r
 
 ## Quick start
 
-- Confirm the installed build and local command surface first: `openclaw --version`, `openclaw help`, `openclaw <subcommand> --help`.
+- **FIRST: Resolve the active profile.** Check `openclaw config file` AND the service manager env vars (`OPENCLAW_PROFILE`, `OPENCLAW_STATE_DIR`, `OPENCLAW_CONFIG_PATH`). If they differ, use `--profile <X>` on every command. See `references/triage.md` Step 0.
+- **If crash-looping:** Stop the service immediately before diagnosing. Crash loops accumulate auth lockout.
+- **Check past incidents:** Read `references/incident-log.md` for known gotchas before starting fresh diagnosis.
+- Confirm the installed build and local command surface: `openclaw --version`, `openclaw help`, `openclaw <subcommand> --help`.
 - Locate the active config before diagnosing behavior: `openclaw config file`.
 - Run the fast ladder in order and stop when the failure class is obvious:
   `openclaw status`
@@ -22,6 +25,7 @@ Treat the local machine as the primary evidence source. The agent and OpenClaw r
 
 ## Workflow
 
+0. **Resolve profile and stop any crash loops** — see Quick start. This is non-negotiable.
 1. Verify local version and command availability with `openclaw --version`, `openclaw help`, and the specific `openclaw <subcommand> --help` pages you plan to use.
 2. Find the active config path with `openclaw config file`, then inspect local config, env overrides, launchctl or service environment, and current logs before changing anything.
 3. Classify the problem quickly: gateway/runtime, dashboard or Control UI, channels and delivery, auth or pairing, config validation, tools, nodes, or plugin surface.
@@ -40,6 +44,11 @@ Read only the file that matches the observed symptom:
 - `references/auth-and-pairing.md` -> DM pairing, device pairing, token mismatch, launchctl or daemon env overrides.
 - `references/common-signatures.md` -> terse log or error signature to next action lookup.
 - `references/validation-scenarios.md` -> scenario prompts with pass or fail expectations for trigger choice, evidence gathering, routing, and verifiable next steps.
+- `references/incident-log.md` -> post-incident learnings from real sessions. Check before starting diagnosis to avoid repeat mistakes. Append new entries after resolving incidents.
+
+## After resolving an incident
+
+Append a terse entry to `references/incident-log.md` with: date, symptoms, root cause, what didn't work, what fixed it, and prevention. This compounds learnings across sessions so future troubleshooting starts with the full history of past gotchas.
 
 ## Quality rules
 
