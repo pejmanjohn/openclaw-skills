@@ -13,6 +13,10 @@ Use these to verify that the skill routes correctly and asks for evidence that c
 - Config change had no effect
 - Node capability fails after pairing
 - Plugin install missing openclaw.extensions
+- Gateway crash-looping after update
+- Doctor fix had no effect on a non-default profile
+- Dashboard shows auth lockout after crash loop
+- Dashboard shows device token mismatch
 
 ## Scenario: missing command from website docs
 
@@ -57,6 +61,7 @@ Prompt:
 Pass expectations:
 
 - asks for `openclaw gateway probe`, `openclaw gateway status`, or the relevant gateway logs
+- checks port alignment between config, service args, and the dashboard URL (see `gateway.md` Port alignment)
 - distinguishes dashboard reachability from gateway runtime and auth state
 - routes to `gateway.md`
 - ends with a concrete reconnect or refresh step tied to a gateway-state check
@@ -65,6 +70,7 @@ Fail expectations:
 
 - jumps straight to reinstalling OpenClaw
 - treats this as a generic network issue with no gateway evidence
+- does not verify the dashboard URL port matches the actual gateway port
 
 ## Scenario: exec suddenly asks for approval
 
@@ -124,7 +130,8 @@ Prompt:
 
 Pass expectations:
 
-- asks for `openclaw config file`
+- resolves active profile first (Step 0) — the edited file may not be the one the service reads
+- asks for `openclaw config file` and compares with the service manager's config path
 - checks env and service-manager overrides
 - routes to config validation and runtime truth from local commands
 
@@ -132,6 +139,7 @@ Fail expectations:
 
 - assumes that `~/.openclaw/openclaw.json` is always the active file
 - ignores background-service environment differences
+- does not check profile resolution
 
 ## Scenario: node capability fails after pairing
 
@@ -164,3 +172,78 @@ Fail expectations:
 
 - treats this as proof that the whole OpenClaw install is broken
 - invents undocumented plugin recovery steps with no error evidence
+
+## Scenario: gateway crash-looping after update
+
+Prompt:
+"My gateway won't start after an update. launchctl shows it keeps restarting with exit code 1."
+
+Pass expectations:
+
+- stops the crash-looping service immediately before further diagnosis (Step 0.5)
+- resolves the active profile before running any openclaw commands (Step 0)
+- checks the service manager's error output or log path for the crash reason
+- routes to `common-signatures.md` and `gateway.md`
+- checks `references/incident-log.md` for matching patterns
+- ends with a fix-then-restart sequence, not a restart-then-fix sequence
+
+Fail expectations:
+
+- runs diagnostic commands while the service continues to crash-loop
+- attempts to restart the service before identifying the crash reason
+- ignores profile resolution and runs bare openclaw commands
+
+## Scenario: doctor fix had no effect on a non-default profile
+
+Prompt:
+"I ran `openclaw doctor --fix` but the gateway still won't start with the same config error."
+
+Pass expectations:
+
+- checks which profile the gateway service uses (Step 0)
+- compares `openclaw config file` output with the service manager's config path
+- identifies that doctor may have fixed a different profile's config
+- re-runs doctor with the correct `--profile` flag
+- verifies the config file was actually modified after the fix
+- routes to `config.md` and `common-signatures.md`
+
+Fail expectations:
+
+- re-runs `openclaw doctor --fix` without a profile flag and expects a different result
+- does not verify the target config file was actually modified
+- assumes `~/.openclaw/openclaw.json` is the only config file
+
+## Scenario: dashboard shows auth lockout after crash loop
+
+Prompt:
+"Dashboard says 'too many failed authentication attempts (retry later)' and I can't connect."
+
+Pass expectations:
+
+- identifies this as an in-memory rate limit, not a permanent auth failure
+- checks whether the gateway was recently crash-looping (which accumulates failed attempts)
+- stops the gateway, fixes any underlying issue, restarts to clear the lockout
+- routes to `common-signatures.md` and `gateway.md`
+
+Fail expectations:
+
+- treats this as a permanent auth or token problem requiring rotation
+- waits for a timeout to expire without addressing the underlying crash cause
+- does not check for crash-loop history before attempting auth fixes
+
+## Scenario: dashboard shows device token mismatch
+
+Prompt:
+"The dashboard page loads but shows 'device token mismatch (rotate/reissue device token)' when I try to connect."
+
+Pass expectations:
+
+- recommends using `openclaw [--profile X] dashboard` to get a tokenized URL instead of connecting manually
+- verifies the port in the generated URL matches the actual gateway listening port
+- checks for port alignment issues between config, service args, and dashboard URL
+- routes to `gateway.md` (Port alignment and Dashboard sections)
+
+Fail expectations:
+
+- manually rotates device tokens without first checking the dashboard URL and port
+- treats this as a pairing issue without verifying basic connectivity and port match
