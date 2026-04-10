@@ -11,7 +11,7 @@ Treat the local machine as the primary evidence source. The agent and OpenClaw r
 
 - **FIRST: Resolve the active profile.** Check `openclaw config file` AND the service manager env vars (`OPENCLAW_PROFILE`, `OPENCLAW_STATE_DIR`, `OPENCLAW_CONFIG_PATH`). If they differ, use `--profile <X>` on every command. See `references/triage.md` Step 0.
 - **If crash-looping:** Stop the service immediately before diagnosing. Crash loops accumulate auth lockout.
-- **Check past incidents:** Read `references/incident-log.md` for known gotchas before starting fresh diagnosis.
+- **Check past incidents:** Read `references/incident-log.md` (shipped patterns) AND `references/local/incident-log.md` (if it exists — environment-specific learnings) before starting fresh diagnosis.
 - Confirm the installed build and local command surface: `openclaw --version`, `openclaw help`, `openclaw <subcommand> --help`.
 - Locate the active config before diagnosing behavior: `openclaw config file`.
 - Run the fast ladder in order and stop when the failure class is obvious:
@@ -42,13 +42,13 @@ Read only the file that matches the observed symptom:
 - `references/channels.md` -> transport versus delivery, allowlists, mentions, pairing, connected-but-no-replies routing.
 - `references/tools-and-nodes.md` -> exec approvals, browser failures, tool routing, and node pairing versus permissions versus approvals.
 - `references/auth-and-pairing.md` -> DM pairing, device pairing, token mismatch, launchctl or daemon env overrides.
-- `references/common-signatures.md` -> terse log or error signature to next action lookup.
+- `references/common-signatures.md` -> terse log or error signature to next action lookup. Also check `references/local/common-signatures.md` if it exists.
 - `references/validation-scenarios.md` -> scenario prompts with pass or fail expectations for trigger choice, evidence gathering, routing, and verifiable next steps.
-- `references/incident-log.md` -> post-incident learnings from real sessions. Check before starting diagnosis to avoid repeat mistakes. Append new entries after resolving incidents.
+- `references/incident-log.md` -> general post-incident patterns (shipped with repo). Also check `references/local/incident-log.md` for environment-specific learnings from past sessions on this machine.
 
 ## After resolving an incident
 
-Append a terse entry to `references/incident-log.md` with: date, symptoms, root cause, what didn't work, what fixed it, and prevention. This compounds learnings across sessions so future troubleshooting starts with the full history of past gotchas.
+Once the issue is confirmed fixed, suggest running `/openclaw-troubleshooting-compound` to capture learnings. That skill reviews the conversation, drafts a structured incident-log entry (and any new error signatures), and applies them on user confirmation. This keeps the incident log growing without requiring the user to write anything manually.
 
 ## Quality rules
 

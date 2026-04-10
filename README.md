@@ -1,6 +1,6 @@
 # 🦞 openclaw-skills
 
-This repository is the canonical source for OpenClaw skills in this public repo. v1 ships one skill, `openclaw-troubleshooting`, so agents can diagnose and repair a broken OpenClaw install before anything else.
+This repository is the canonical source for OpenClaw skills. It ships two skills that work together: `openclaw-troubleshooting` for diagnosing and repairing a broken OpenClaw install, and `openclaw-troubleshooting-compound` for capturing learnings after each incident so the troubleshooting skill gets smarter over time.
 
 ## Current Scope
 
@@ -17,6 +17,56 @@ This repo focuses on local, evidence-based troubleshooting for:
 
 The first skill is troubleshooting-focused because that is the fastest way to make the repo useful on day one. When OpenClaw is running on the same machine as the agent, local binary/help/config/state/logs are more trustworthy than assumptions or the latest docs alone.
 
+## Compounding Knowledge
+
+Most troubleshooting skills are static: they ship a fixed set of instructions and never learn from the incidents they help resolve. This repo is designed to get smarter over time — for **each user individually**.
+
+The cycle works like this:
+
+**Diagnose → Fix → Compound → Repeat**
+
+After resolving an incident, the troubleshooting skill suggests running `/openclaw-troubleshooting-compound`. That companion skill reviews what just happened in the conversation — symptoms, dead ends, root cause, fix — and drafts a structured entry for your **local** incident log (`references/local/incident-log.md`) and any new error signatures (`references/local/common-signatures.md`). You review the draft, confirm, and the learnings are written. No manual writing required. The `local/` directory is gitignored, so your entries never conflict with upstream updates.
+
+The next time the troubleshooting skill triggers, it reads the incident log before starting diagnosis, so it arrives with the full history of **your** past incidents instead of starting from zero.
+
+### Why local, not upstream?
+
+The most useful troubleshooting knowledge is specific: your exact ports, profile names, config paths, service labels, the commands that worked on your machine. Generic patterns are already in the skill's reference files. The incident log is where your environment's quirks accumulate — the things no upstream documentation could anticipate.
+
+The repo ships two layers of knowledge:
+
+| Layer | Location | Tracked by git | Contains |
+|---|---|---|---|
+| **Shipped** | `references/incident-log.md`, `references/common-signatures.md` | Yes | General patterns, seed entries |
+| **Local** | `references/local/incident-log.md`, `references/local/common-signatures.md` | No (gitignored) | Your environment-specific entries |
+
+The troubleshooting skill reads both layers. `git pull` updates the shipped patterns without touching your local learnings.
+
+This means:
+- The first time you hit a problem, you work through it. The second time, the skill already has your exact fix — paths, ports, and all.
+- Error signatures that required investigation once become instant lookups with your specific next-action steps.
+- Upstream improvements arrive via `git pull` without merge conflicts.
+
+### How it works
+
+```
+┌─────────────────────────┐     ┌──────────────────────────────┐
+│ openclaw-troubleshooting │     │ openclaw-troubleshooting-     │
+│                         │     │ compound                      │
+│  1. Read incident log   │     │                              │
+│  2. Diagnose & fix      │────▶│  1. Review conversation      │
+│  3. Suggest /compound   │     │  2. Draft incident-log entry │
+│                         │     │  3. Draft new signatures     │
+└─────────────────────────┘     │  4. Check for duplicates     │
+                                │  5. Present for confirmation │
+                                │  6. Write to local install   │
+                                └──────────────────────────────┘
+```
+
+### Contributing upstream
+
+If you resolve an incident that reveals a **general pattern** other users would benefit from, you can contribute it back. Generalize the entry (replace machine-specific details with placeholders) and open a PR to `references/incident-log.md` or `references/common-signatures.md`.
+
 ## Local First, Version Aware
 
 Use the installed OpenClaw binary as runtime truth:
@@ -32,9 +82,15 @@ Treat [docs.openclaw.ai](https://docs.openclaw.ai/) as procedural truth for the 
 
 The source of truth lives in one place:
 
-- `skills/openclaw-troubleshooting/SKILL.md`
-- `skills/openclaw-troubleshooting/references/`
-- `skills/openclaw-troubleshooting/scripts/`
+- `skills/openclaw-troubleshooting/SKILL.md` — entrypoint and routing logic
+- `skills/openclaw-troubleshooting/references/` — deep reference files per symptom class
+  - `incident-log.md` — compounding knowledge from resolved incidents
+  - `common-signatures.md` — error string → next action lookup table
+  - `validation-scenarios.md` — behavioral test scenarios for the skill
+  - `triage.md`, `gateway.md`, `config.md`, `channels.md`, `auth-and-pairing.md`, `tools-and-nodes.md` — domain runbooks
+- `skills/openclaw-troubleshooting/scripts/` — helper scripts for diagnostics
+
+- `skills/openclaw-troubleshooting-compound/SKILL.md` — companion skill that drafts and applies post-incident learnings
 
 `skills/openclaw-troubleshooting/agents/openai.yaml` is optional Codex metadata only. It is intentionally thin and does not replace `SKILL.md`.
 

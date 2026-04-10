@@ -2,10 +2,9 @@
 
 set -eu
 
-SKILL_NAME="openclaw-troubleshooting"
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
-SKILL_SRC="$REPO_ROOT/skills/$SKILL_NAME"
+SKILLS_DIR="$REPO_ROOT/skills"
 DEST_DIR="${OPENCLAW_SKILLS_DIR:-$HOME/.openclaw/skills}"
 
 usage() {
@@ -35,20 +34,29 @@ while [ "$#" -gt 0 ]; do
     shift
 done
 
-TARGET="$DEST_DIR/$SKILL_NAME"
-
 mkdir -p "$DEST_DIR"
 
-if [ -L "$TARGET" ] && [ "$(readlink "$TARGET")" = "$SKILL_SRC" ]; then
-    echo "OpenClaw skill already installed at $TARGET"
-    exit 0
-fi
+installed=0
+for skill_src in "$SKILLS_DIR"/*/; do
+    [ -d "$skill_src" ] || continue
+    skill_name=$(basename "$skill_src")
+    target="$DEST_DIR/$skill_name"
 
-if [ -e "$TARGET" ] || [ -L "$TARGET" ]; then
-    echo "Refusing to overwrite existing path: $TARGET" >&2
-    exit 1
-fi
+    skill_src_clean="${skill_src%/}"
+    if [ -L "$target" ] && [ "$(readlink "$target")" = "$skill_src_clean" ]; then
+        echo "Already installed: $skill_name"
+        installed=$((installed + 1))
+        continue
+    fi
 
-ln -s "$SKILL_SRC" "$TARGET"
+    if [ -e "$target" ] || [ -L "$target" ]; then
+        echo "Skipping $skill_name: $target already exists (not our symlink)" >&2
+        continue
+    fi
 
-echo "Installed $SKILL_NAME for OpenClaw at $TARGET"
+    ln -s "$skill_src_clean" "$target"
+    echo "Installed $skill_name at $target"
+    installed=$((installed + 1))
+done
+
+echo "Done. $installed skill(s) installed for OpenClaw."
