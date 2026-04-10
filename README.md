@@ -1,6 +1,6 @@
 # 🦞 openclaw-skills
 
-This repository is the canonical source for OpenClaw skills in this public repo. v1 ships one skill, `openclaw-troubleshooting`, so agents can diagnose and repair a broken OpenClaw install before anything else.
+This repository is the canonical source for OpenClaw skills. It ships two skills that work together: `openclaw-troubleshooting` for diagnosing and repairing a broken OpenClaw install, and `openclaw-troubleshooting-compound` for capturing learnings after each incident so the troubleshooting skill gets smarter over time.
 
 ## Current Scope
 
@@ -19,24 +19,43 @@ The first skill is troubleshooting-focused because that is the fastest way to ma
 
 ## Compounding Knowledge
 
-Most troubleshooting skills are static: they ship a fixed set of instructions and never learn from the incidents they help resolve. This skill is designed to get smarter over time.
+Most troubleshooting skills are static: they ship a fixed set of instructions and never learn from the incidents they help resolve. This repo is designed to get smarter over time.
 
 The cycle works like this:
 
-**Diagnose → Fix → Document → Compound → Repeat**
+**Diagnose → Fix → Compound → Repeat**
 
-Each resolved incident produces a structured entry in the [incident log](skills/openclaw-troubleshooting/references/incident-log.md) — symptoms, root cause, what didn't work, what fixed it, and how to prevent it next time. The next time the skill triggers, it reads that log before starting diagnosis, so it arrives with the full history of past gotchas instead of starting from zero.
+After resolving an incident, the troubleshooting skill suggests running `/openclaw-troubleshooting-compound`. That companion skill reviews what just happened in the conversation — symptoms, dead ends, root cause, fix — and drafts a structured entry for the [incident log](skills/openclaw-troubleshooting/references/incident-log.md) and any new error signatures for [common-signatures.md](skills/openclaw-troubleshooting/references/common-signatures.md). You review the draft, confirm, and the learnings are applied. No manual writing required.
+
+The next time the troubleshooting skill triggers, it reads the incident log before starting diagnosis, so it arrives with the full history of past gotchas instead of starting from zero.
 
 This means:
 - The first time you hit a profile mismatch, you spend 30 minutes chasing the wrong config file. The second time, the skill already knows the pattern and skips straight to the fix.
-- Error signatures that required investigation once become instant lookups in [common-signatures.md](skills/openclaw-troubleshooting/references/common-signatures.md).
+- Error signatures that required investigation once become instant lookups.
 - Edge cases that no documentation covers — because they only emerge from real incidents — accumulate as institutional knowledge.
 
-The skill doesn't learn autonomously. **You** close the loop by appending what you learned after each incident. The skill just makes sure that knowledge is loaded at the right moment — the start of every future troubleshooting session.
+The skill doesn't learn autonomously. **You** close the loop with a single confirmation. The skills handle the drafting, generalization, and file updates.
 
-### Contributing learnings
+### How it works
 
-After resolving an incident, append an entry to `references/incident-log.md`:
+```
+┌─────────────────────────┐     ┌──────────────────────────────┐
+│ openclaw-troubleshooting │     │ openclaw-troubleshooting-     │
+│                         │     │ compound                      │
+│  1. Read incident log   │     │                              │
+│  2. Diagnose & fix      │────▶│  1. Review conversation      │
+│  3. Suggest /compound   │     │  2. Draft incident-log entry │
+│                         │     │  3. Draft new signatures     │
+└─────────────────────────┘     │  4. Generalize (strip        │
+                                │     machine-specific details) │
+                                │  5. Present for confirmation │
+                                │  6. Apply on approval        │
+                                └──────────────────────────────┘
+```
+
+### Contributing learnings manually
+
+If you prefer to write entries by hand or want to contribute learnings from outside a live session, append to `references/incident-log.md`:
 
 ```markdown
 ## Short description of the incident
@@ -78,6 +97,8 @@ The source of truth lives in one place:
   - `validation-scenarios.md` — behavioral test scenarios for the skill
   - `triage.md`, `gateway.md`, `config.md`, `channels.md`, `auth-and-pairing.md`, `tools-and-nodes.md` — domain runbooks
 - `skills/openclaw-troubleshooting/scripts/` — helper scripts for diagnostics
+
+- `skills/openclaw-troubleshooting-compound/SKILL.md` — companion skill that drafts and applies post-incident learnings
 
 `skills/openclaw-troubleshooting/agents/openai.yaml` is optional Codex metadata only. It is intentionally thin and does not replace `SKILL.md`.
 

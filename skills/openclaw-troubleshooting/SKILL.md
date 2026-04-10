@@ -48,7 +48,7 @@ Read only the file that matches the observed symptom:
 
 ## After resolving an incident
 
-Append a terse entry to `references/incident-log.md` with: date, symptoms, root cause, what didn't work, what fixed it, and prevention. This compounds learnings across sessions so future troubleshooting starts with the full history of past gotchas.
+Once the issue is confirmed fixed, suggest running `/openclaw-troubleshooting-compound` to capture learnings. That skill reviews the conversation, drafts a structured incident-log entry (and any new error signatures), and applies them on user confirmation. This keeps the incident log growing without requiring the user to write anything manually.
 
 ## Quality rules
 
