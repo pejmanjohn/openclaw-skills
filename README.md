@@ -25,7 +25,7 @@ The cycle works like this:
 
 **Diagnose → Fix → Compound → Repeat**
 
-After resolving an incident, the troubleshooting skill suggests running `/openclaw-troubleshooting-compound`. That companion skill reviews what just happened in the conversation — symptoms, dead ends, root cause, fix — and drafts a structured entry for your **local** [incident log](skills/openclaw-troubleshooting/references/incident-log.md) and any new error signatures for [common-signatures.md](skills/openclaw-troubleshooting/references/common-signatures.md). You review the draft, confirm, and the learnings are written to your installed copy. No manual writing required.
+After resolving an incident, the troubleshooting skill suggests running `/openclaw-troubleshooting-compound`. That companion skill reviews what just happened in the conversation — symptoms, dead ends, root cause, fix — and drafts a structured entry for your **local** incident log (`references/local/incident-log.md`) and any new error signatures (`references/local/common-signatures.md`). You review the draft, confirm, and the learnings are written. No manual writing required. The `local/` directory is gitignored, so your entries never conflict with upstream updates.
 
 The next time the troubleshooting skill triggers, it reads the incident log before starting diagnosis, so it arrives with the full history of **your** past incidents instead of starting from zero.
 
@@ -33,10 +33,19 @@ The next time the troubleshooting skill triggers, it reads the incident log befo
 
 The most useful troubleshooting knowledge is specific: your exact ports, profile names, config paths, service labels, the commands that worked on your machine. Generic patterns are already in the skill's reference files. The incident log is where your environment's quirks accumulate — the things no upstream documentation could anticipate.
 
+The repo ships two layers of knowledge:
+
+| Layer | Location | Tracked by git | Contains |
+|---|---|---|---|
+| **Shipped** | `references/incident-log.md`, `references/common-signatures.md` | Yes | General patterns, seed entries |
+| **Local** | `references/local/incident-log.md`, `references/local/common-signatures.md` | No (gitignored) | Your environment-specific entries |
+
+The troubleshooting skill reads both layers. `git pull` updates the shipped patterns without touching your local learnings.
+
 This means:
-- The repo ships with seed entries covering common patterns. Your local copy diverges as you resolve incidents in your own environment.
 - The first time you hit a problem, you work through it. The second time, the skill already has your exact fix — paths, ports, and all.
 - Error signatures that required investigation once become instant lookups with your specific next-action steps.
+- Upstream improvements arrive via `git pull` without merge conflicts.
 
 ### How it works
 

@@ -28,8 +28,10 @@ Review the current conversation for:
 
 Also read the current state of these files in the **locally installed** `openclaw-troubleshooting` skill directory:
 
-- `references/incident-log.md` — to avoid duplicating an existing entry
-- `references/common-signatures.md` — to check if new error signatures should be added
+- `references/local/incident-log.md` — to avoid duplicating an existing local entry
+- `references/local/common-signatures.md` — to check if new local error signatures should be added
+- `references/incident-log.md` — shipped patterns, for context (do not write to this file)
+- `references/common-signatures.md` — shipped signatures, for context (do not write to this file)
 
 ### 2. Locate the local skill directory
 
@@ -82,7 +84,8 @@ Draft new rows for the common-signatures table if the incident surfaced error st
 
 Before presenting the draft:
 
-- If an existing incident-log entry covers the **same root cause**, propose updating that entry with new details (additional dead ends, alternative fixes, updated environment notes) instead of creating a new one.
+- Check `references/local/incident-log.md` for existing local entries with the **same root cause**. If found, propose updating that entry with new details instead of creating a new one.
+- Also check `references/incident-log.md` (shipped patterns). If the shipped file already has a general version of this incident, the local entry should focus on environment-specific details that go beyond the general pattern — don't duplicate what's already shipped.
 - If the root cause is related but distinct, create a new entry.
 
 ### 5. Present and confirm
@@ -104,11 +107,27 @@ Wait for explicit confirmation. The user may:
 
 On confirmation:
 
-1. Append the incident-log entry to `references/incident-log.md` (add a `---` separator before the new entry), or update the existing entry if deduplicating
-2. Insert any new signature rows into the table in `references/common-signatures.md`
-3. Show the user the exact changes made
+1. Create `references/local/` directory if it doesn't exist
+2. If `references/local/incident-log.md` doesn't exist, create it with the header:
+   ```
+   # Local Incident Log
+   
+   Environment-specific learnings from this machine's troubleshooting sessions. This file is gitignored and written by `/openclaw-troubleshooting-compound`.
+   ```
+3. Append the incident-log entry to `references/local/incident-log.md` (add a `---` separator before the new entry), or update an existing local entry if deduplicating
+4. If `references/local/common-signatures.md` doesn't exist and there are new signatures, create it with the header and table header:
+   ```
+   # Local Signatures
+   
+   Environment-specific error signatures from this machine. This file is gitignored and written by `/openclaw-troubleshooting-compound`.
+   
+   | Signature or symptom | Next action |
+   | --- | --- |
+   ```
+5. Append any new signature rows to `references/local/common-signatures.md`
+6. Show the user the exact changes made
 
-Do NOT commit or push. These are local-only changes to the user's installed skill copy. The user decides if and when to commit.
+These files are gitignored — they won't show up in `git status` or accidentally get pushed upstream.
 
 ## Quality rules
 

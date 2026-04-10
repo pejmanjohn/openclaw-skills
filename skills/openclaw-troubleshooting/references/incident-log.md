@@ -1,12 +1,16 @@
 # Incident Log
 
-Post-incident learnings from real troubleshooting sessions. Read this before starting diagnosis — past gotchas prevent repeat mistakes.
+Post-incident learnings from real troubleshooting sessions. Read this file AND `local/incident-log.md` (if it exists) before starting diagnosis — past gotchas prevent repeat mistakes.
 
-## How to use
+## How this works
 
-- **Before diagnosing:** Scan entries for matching symptoms.
-- **After resolving:** Append an entry with: date, symptoms, root cause, what didn't work, what fixed it, and the prevention takeaway. Keep entries terse.
-- Entries should describe **general patterns**, not machine-specific details. If a gotcha only applies to a specific setup, note the precondition.
+This file ships with the repo and contains **general patterns** — common gotchas that apply to any OpenClaw setup. It is tracked by git and updated via PRs.
+
+Environment-specific learnings (your exact paths, ports, profile names, commands) live in `local/incident-log.md`, which is gitignored. The `/openclaw-troubleshooting-compound` skill writes there automatically after each resolved incident.
+
+**Before diagnosing:** Scan both files for matching symptoms.
+
+## Seed entries
 
 ---
 
