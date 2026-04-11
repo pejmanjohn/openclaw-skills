@@ -1,4 +1,8 @@
 .worktrees/
 docs/superpowers/
-skills/*/playbooks/local/*
-!skills/*/playbooks/local/.gitkeep
+local/**
+!local/
+!local/memory/
+!local/state/
+!local/memory/.gitkeep
+!local/state/.gitkeep

@@ -16,6 +16,9 @@ class RepositoryShapeTests(unittest.TestCase):
             ROOT / "skills" / "openclaw-troubleshooting" / "playbooks",
             ROOT / "skills" / "openclaw-troubleshooting" / "scripts",
             ROOT / "skills" / "openclaw-troubleshooting" / "agents",
+            ROOT / "local",
+            ROOT / "local" / "memory",
+            ROOT / "local" / "state",
         ]
         for path in expected:
             with self.subTest(path=path.relative_to(ROOT)):
@@ -357,3 +360,41 @@ class DiagnosticsScriptTests(unittest.TestCase):
             )
         self.assertEqual(result.returncode, 2)
         self.assertIn("Invalid value for --follow-seconds", result.stderr)
+
+
+class TopLevelLocalLayoutTests(unittest.TestCase):
+    def test_local_directory_exists_at_repo_root(self) -> None:
+        self.assertTrue((ROOT / "local").is_dir(), "missing top-level local/")
+        self.assertTrue((ROOT / "local" / "memory").is_dir(), "missing local/memory/")
+        self.assertTrue((ROOT / "local" / "state").is_dir(), "missing local/state/")
+
+    def test_local_subdirectories_have_gitkeep_files(self) -> None:
+        self.assertTrue((ROOT / "local" / "memory" / ".gitkeep").is_file())
+        self.assertTrue((ROOT / "local" / "state" / ".gitkeep").is_file())
+
+    def test_local_state_files_are_gitignored(self) -> None:
+        result = subprocess.run(
+            ["git", "check-ignore", "-q", "local/state/instances.json"],
+            cwd=ROOT, capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, "local/state/instances.json should be gitignored")
+
+    def test_local_memory_files_are_gitignored(self) -> None:
+        result = subprocess.run(
+            ["git", "check-ignore", "-q", "local/memory/incident-log.md"],
+            cwd=ROOT, capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, "local/memory/incident-log.md should be gitignored")
+
+    def test_gitkeep_files_are_not_ignored(self) -> None:
+        for keeper in ("local/memory/.gitkeep", "local/state/.gitkeep"):
+            with self.subTest(path=keeper):
+                result = subprocess.run(
+                    ["git", "check-ignore", "-q", keeper],
+                    cwd=ROOT, capture_output=True,
+                )
+                self.assertEqual(result.returncode, 1, f"{keeper} should NOT be gitignored")
+
+    def test_per_skill_references_local_no_longer_exists(self) -> None:
+        legacy = ROOT / "skills" / "openclaw-troubleshooting" / "playbooks" / "local"
+        self.assertFalse(legacy.exists(), "playbooks/local/ should be gone after the hoist")

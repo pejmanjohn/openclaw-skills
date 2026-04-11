@@ -25,7 +25,7 @@ The cycle works like this:
 
 **Diagnose → Fix → Compound → Repeat**
 
-After resolving an incident, the troubleshooting skill suggests running `/openclaw-troubleshooting-compound`. That companion skill reviews what just happened in the conversation — symptoms, dead ends, root cause, fix — and drafts a structured entry for your **local** incident log (`playbooks/local/incident-log.md`) and any new error signatures (`playbooks/local/common-signatures.md`). You review the draft, confirm, and the learnings are written. No manual writing required. The `local/` directory is gitignored, so your entries never conflict with upstream updates.
+After resolving an incident, the troubleshooting skill suggests running `/openclaw-troubleshooting-compound`. That companion skill reviews what just happened in the conversation — symptoms, dead ends, root cause, fix — and drafts a structured entry for your **local** incident log (`local/memory/incident-log.md`) and any new error signatures (`local/memory/common-signatures.md`). You review the draft, confirm, and the learnings are written. No manual writing required. The `local/` directory is gitignored, so your entries never conflict with upstream updates.
 
 The next time the troubleshooting skill triggers, it reads the incident log before starting diagnosis, so it arrives with the full history of **your** past incidents instead of starting from zero.
 
@@ -37,8 +37,8 @@ The repo ships two layers of knowledge:
 
 | Layer | Location | Tracked by git | Contains |
 |---|---|---|---|
-| **Shipped** | `playbooks/incident-log.md`, `playbooks/common-signatures.md` | Yes | General patterns, seed entries |
-| **Local** | `playbooks/local/incident-log.md`, `playbooks/local/common-signatures.md` | No (gitignored) | Your environment-specific entries |
+| **Shipped** | `skills/openclaw-troubleshooting/playbooks/incident-log.md`, `skills/openclaw-troubleshooting/playbooks/common-signatures.md` | Yes | General patterns, seed entries |
+| **Local** | `local/memory/incident-log.md`, `local/memory/common-signatures.md` | No (gitignored) | Your environment-specific entries |
 
 The troubleshooting skill reads both layers. `git pull` updates the shipped patterns without touching your local learnings.
 
@@ -65,7 +65,7 @@ This means:
 
 ### Contributing upstream
 
-If you resolve an incident that reveals a **general pattern** other users would benefit from, you can contribute it back. Generalize the entry (replace machine-specific details with placeholders) and open a PR to `playbooks/incident-log.md` or `playbooks/common-signatures.md`.
+If you resolve an incident that reveals a **general pattern** other users would benefit from, you can contribute it back. Generalize the entry (replace machine-specific details with placeholders) and open a PR to `skills/openclaw-troubleshooting/playbooks/incident-log.md` or `skills/openclaw-troubleshooting/playbooks/common-signatures.md`.
 
 ## Local First, Version Aware
 

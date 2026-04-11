@@ -7,7 +7,7 @@ description: Use after resolving an OpenClaw troubleshooting incident to capture
 
 This skill closes the loop after an OpenClaw troubleshooting session. It drafts structured learnings from what just happened and applies them on confirmation — so the next session starts smarter without requiring the user to write anything manually.
 
-Learnings are written to the **local** installed copy of the troubleshooting skill. They are specific to this user's environment — exact paths, ports, profile names, config quirks. This is personal institutional memory, not upstream documentation.
+Learnings are written to a **shared local memory** directory at the repo root (`local/memory/`). They are specific to this user's environment — exact paths, ports, profile names, config quirks. This is personal institutional memory, not upstream documentation. Multiple installs (Claude Code, Codex, OpenClaw itself) sharing the same source checkout all read and write the same memory.
 
 ## When to trigger
 
@@ -26,23 +26,27 @@ Review the current conversation for:
 - **Fix**: What actually resolved the issue, step by step
 - **Prevention**: What would have avoided this entirely or caught it faster
 
-Also read the current state of these files in the **locally installed** `openclaw-troubleshooting` skill directory:
+Also read the current state of these files:
 
-- `playbooks/local/incident-log.md` — to avoid duplicating an existing local entry
-- `playbooks/local/common-signatures.md` — to check if new local error signatures should be added
-- `playbooks/incident-log.md` — shipped patterns, for context (do not write to this file)
-- `playbooks/common-signatures.md` — shipped signatures, for context (do not write to this file)
+- `<repo-root>/local/memory/incident-log.md` — to avoid duplicating an existing local entry
+- `<repo-root>/local/memory/common-signatures.md` — to check if new local error signatures should be added
+- `<repo-root>/skills/openclaw-troubleshooting/playbooks/incident-log.md` — shipped patterns, for context (do not write to this file)
+- `<repo-root>/skills/openclaw-troubleshooting/playbooks/common-signatures.md` — shipped signatures, for context (do not write to this file)
 
-### 2. Locate the local skill directory
+### 2. Locate the shared local memory directory
 
-The compound skill writes to the user's installed copy of `openclaw-troubleshooting`, not to a git checkout or upstream repo. Find it by checking these locations in order:
+The compound skill writes to the shared `local/memory/` directory at the repo root — not to any skill-specific subdirectory. All installs (Claude Code, Codex, OpenClaw itself) that symlink back to the same source checkout share this directory automatically.
 
-1. A sibling directory: `../openclaw-troubleshooting/` relative to this skill
-2. `~/.claude/skills/openclaw-troubleshooting/`
-3. `~/.openclaw/skills/openclaw-troubleshooting/`
-4. The workspace `skills/openclaw-troubleshooting/` if present
+To find the repo root, resolve this skill's own path (following any symlinks) and walk up two directories:
+`<resolved skill path>/../../`
 
-If the directory is a symlink, follow it — write to whatever the symlink points to.
+If the walk-up produces a directory that contains `skills/` and `local/`, that is the repo root.
+
+If the walk-up fails or the result looks wrong, fall back to these locations in order:
+
+1. `~/src/openclaw-skills/local/memory/`
+2. `~/.openclaw/local/memory/`
+3. The workspace `local/memory/` if present
 
 ### 3. Draft the learnings
 
@@ -84,8 +88,8 @@ Draft new rows for the common-signatures table if the incident surfaced error st
 
 Before presenting the draft:
 
-- Check `playbooks/local/incident-log.md` for existing local entries with the **same root cause**. If found, propose updating that entry with new details instead of creating a new one.
-- Also check `playbooks/incident-log.md` (shipped patterns). If the shipped file already has a general version of this incident, the local entry should focus on environment-specific details that go beyond the general pattern — don't duplicate what's already shipped.
+- Check `<repo-root>/local/memory/incident-log.md` for existing local entries with the **same root cause**. If found, propose updating that entry with new details instead of creating a new one.
+- Also check `<repo-root>/skills/openclaw-troubleshooting/playbooks/incident-log.md` (shipped patterns). If the shipped file already has a general version of this incident, the local entry should focus on environment-specific details that go beyond the general pattern — don't duplicate what's already shipped.
 - If the root cause is related but distinct, create a new entry.
 
 ### 5. Present and confirm
@@ -107,15 +111,15 @@ Wait for explicit confirmation. The user may:
 
 On confirmation:
 
-1. Create `playbooks/local/` directory if it doesn't exist
-2. If `playbooks/local/incident-log.md` doesn't exist, create it with the header:
+1. Create `<repo-root>/local/memory/` directory if it doesn't exist
+2. If `<repo-root>/local/memory/incident-log.md` doesn't exist, create it with the header:
    ```
    # Local Incident Log
    
    Environment-specific learnings from this machine's troubleshooting sessions. This file is gitignored and written by `/openclaw-troubleshooting-compound`.
    ```
-3. Append the incident-log entry to `playbooks/local/incident-log.md` (add a `---` separator before the new entry), or update an existing local entry if deduplicating
-4. If `playbooks/local/common-signatures.md` doesn't exist and there are new signatures, create it with the header and table header:
+3. Append the incident-log entry to `<repo-root>/local/memory/incident-log.md` (add a `---` separator before the new entry), or update an existing local entry if deduplicating
+4. If `<repo-root>/local/memory/common-signatures.md` doesn't exist and there are new signatures, create it with the header and table header:
    ```
    # Local Signatures
    
@@ -124,7 +128,7 @@ On confirmation:
    | Signature or symptom | Next action |
    | --- | --- |
    ```
-5. Append any new signature rows to `playbooks/local/common-signatures.md`
+5. Append any new signature rows to `<repo-root>/local/memory/common-signatures.md`
 6. Show the user the exact changes made
 
 These files are gitignored — they won't show up in `git status` or accidentally get pushed upstream.
