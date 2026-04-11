@@ -16,6 +16,8 @@ class RepositoryShapeTests(unittest.TestCase):
             ROOT / "skills" / "openclaw-troubleshooting" / "playbooks",
             ROOT / "skills" / "openclaw-troubleshooting" / "scripts",
             ROOT / "skills" / "openclaw-troubleshooting" / "agents",
+            ROOT / "skills" / "openclaw-instance-discovery",
+            ROOT / "skills" / "openclaw-instance-discovery" / "playbooks",
             ROOT / "local",
             ROOT / "local" / "memory",
             ROOT / "local" / "state",
@@ -398,3 +400,41 @@ class TopLevelLocalLayoutTests(unittest.TestCase):
     def test_per_skill_references_local_no_longer_exists(self) -> None:
         legacy = ROOT / "skills" / "openclaw-troubleshooting" / "playbooks" / "local"
         self.assertFalse(legacy.exists(), "playbooks/local/ should be gone after the hoist")
+
+
+class InstanceDiscoverySkillMetadataTests(unittest.TestCase):
+    SKILL_PATH = ROOT / "skills" / "openclaw-instance-discovery" / "SKILL.md"
+
+    def test_skill_file_exists(self) -> None:
+        self.assertTrue(self.SKILL_PATH.is_file(), "missing skills/openclaw-instance-discovery/SKILL.md")
+
+    def test_skill_frontmatter_is_valid(self) -> None:
+        text = self.SKILL_PATH.read_text()
+        self.assertIn("name: openclaw-instance-discovery", text)
+        self.assertIn("description: Use when", text)
+
+    def test_skill_description_includes_natural_language_triggers(self) -> None:
+        text = self.SKILL_PATH.read_text()
+        for needle in ["find", "openclaw", "rescan", "discover", "instance"]:
+            with self.subTest(needle=needle):
+                self.assertIn(needle, text.lower())
+
+    def test_skill_description_mentions_auto_trigger(self) -> None:
+        text = self.SKILL_PATH.read_text()
+        self.assertIn("auto-triggered", text.lower())
+
+    def test_skill_includes_required_top_level_sections(self) -> None:
+        text = self.SKILL_PATH.read_text()
+        for heading in ["## Quick start", "## Workflow", "## Reference map", "## Quality rules"]:
+            with self.subTest(heading=heading):
+                self.assertIn(heading, text)
+
+    def test_reference_map_mentions_each_playbook_file(self) -> None:
+        text = self.SKILL_PATH.read_text()
+        for name in ["discovery-sequence.md", "fallback-ladder.md", "registry-contract.md"]:
+            with self.subTest(name=name):
+                self.assertIn(name, text)
+
+    def test_skill_grounds_in_openclaw_docs(self) -> None:
+        text = self.SKILL_PATH.read_text()
+        self.assertIn("docs.openclaw.ai", text)
