@@ -1,3 +1,4 @@
+.worktrees/
 docs/superpowers/
 skills/*/references/local/*
 !skills/*/references/local/.gitkeep
