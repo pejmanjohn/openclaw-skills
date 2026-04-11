@@ -9,9 +9,9 @@ Treat the local machine as the primary evidence source. The agent and OpenClaw r
 
 ## Quick start
 
-- **FIRST: Resolve the active profile.** Check `openclaw config file` AND the service manager env vars (`OPENCLAW_PROFILE`, `OPENCLAW_STATE_DIR`, `OPENCLAW_CONFIG_PATH`). If they differ, use `--profile <X>` on every command. See `references/triage.md` Step 0.
+- **FIRST: Resolve the active profile.** Check `openclaw config file` AND the service manager env vars (`OPENCLAW_PROFILE`, `OPENCLAW_STATE_DIR`, `OPENCLAW_CONFIG_PATH`). If they differ, use `--profile <X>` on every command. See `playbooks/triage.md` Step 0.
 - **If crash-looping:** Stop the service immediately before diagnosing. Crash loops accumulate auth lockout.
-- **Check past incidents:** Read `references/incident-log.md` (shipped patterns) AND `references/local/incident-log.md` (if it exists — environment-specific learnings) before starting fresh diagnosis.
+- **Check past incidents:** Read `playbooks/incident-log.md` (shipped patterns) AND `playbooks/local/incident-log.md` (if it exists — environment-specific learnings) before starting fresh diagnosis.
 - Confirm the installed build and local command surface: `openclaw --version`, `openclaw help`, `openclaw <subcommand> --help`.
 - Locate the active config before diagnosing behavior: `openclaw config file`.
 - Run the fast ladder in order and stop when the failure class is obvious:
@@ -36,15 +36,15 @@ Treat the local machine as the primary evidence source. The agent and OpenClaw r
 
 Read only the file that matches the observed symptom:
 
-- `references/triage.md` -> first 60 seconds, healthy signals, fast classification, local env and path overrides.
-- `references/gateway.md` -> gateway runtime, probe and status, dashboard and Control UI, auth modes, token drift, upgrade breakage.
-- `references/config.md` -> active config path, schema and validation, safe edits, `config get`, `config schema`, `config validate`, env override confusion.
-- `references/channels.md` -> transport versus delivery, allowlists, mentions, pairing, connected-but-no-replies routing.
-- `references/tools-and-nodes.md` -> exec approvals, browser failures, tool routing, and node pairing versus permissions versus approvals.
-- `references/auth-and-pairing.md` -> DM pairing, device pairing, token mismatch, launchctl or daemon env overrides.
-- `references/common-signatures.md` -> terse log or error signature to next action lookup. Also check `references/local/common-signatures.md` if it exists.
-- `references/validation-scenarios.md` -> scenario prompts with pass or fail expectations for trigger choice, evidence gathering, routing, and verifiable next steps.
-- `references/incident-log.md` -> general post-incident patterns (shipped with repo). Also check `references/local/incident-log.md` for environment-specific learnings from past sessions on this machine.
+- `playbooks/triage.md` -> first 60 seconds, healthy signals, fast classification, local env and path overrides.
+- `playbooks/gateway.md` -> gateway runtime, probe and status, dashboard and Control UI, auth modes, token drift, upgrade breakage.
+- `playbooks/config.md` -> active config path, schema and validation, safe edits, `config get`, `config schema`, `config validate`, env override confusion.
+- `playbooks/channels.md` -> transport versus delivery, allowlists, mentions, pairing, connected-but-no-replies routing.
+- `playbooks/tools-and-nodes.md` -> exec approvals, browser failures, tool routing, and node pairing versus permissions versus approvals.
+- `playbooks/auth-and-pairing.md` -> DM pairing, device pairing, token mismatch, launchctl or daemon env overrides.
+- `playbooks/common-signatures.md` -> terse log or error signature to next action lookup. Also check `playbooks/local/common-signatures.md` if it exists.
+- `playbooks/validation-scenarios.md` -> scenario prompts with pass or fail expectations for trigger choice, evidence gathering, routing, and verifiable next steps.
+- `playbooks/incident-log.md` -> general post-incident patterns (shipped with repo). Also check `playbooks/local/incident-log.md` for environment-specific learnings from past sessions on this machine.
 
 ## After resolving an incident
 

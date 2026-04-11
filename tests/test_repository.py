@@ -13,7 +13,7 @@ class RepositoryShapeTests(unittest.TestCase):
         expected = [
             ROOT / "scripts",
             ROOT / "skills" / "openclaw-troubleshooting",
-            ROOT / "skills" / "openclaw-troubleshooting" / "references",
+            ROOT / "skills" / "openclaw-troubleshooting" / "playbooks",
             ROOT / "skills" / "openclaw-troubleshooting" / "scripts",
             ROOT / "skills" / "openclaw-troubleshooting" / "agents",
         ]
@@ -69,7 +69,7 @@ class SkillMetadataTests(unittest.TestCase):
             self.assertIn(name, text)
 
     def test_reference_files_exist_and_include_core_invariants(self) -> None:
-        references = ROOT / "skills" / "openclaw-troubleshooting" / "references"
+        playbooks = ROOT / "skills" / "openclaw-troubleshooting" / "playbooks"
         expected = {
             "triage.md": ["# Triage", "## Contents", "## First 60 seconds", "openclaw [--profile X] status --all"],
             "gateway.md": ["# Gateway", "## Contents", "## Core checks", "openclaw gateway probe"],
@@ -104,9 +104,9 @@ class SkillMetadataTests(unittest.TestCase):
             ],
         }
         for name, phrases in expected.items():
-            path = references / name
-            with self.subTest(reference=name):
-                self.assertTrue(path.is_file(), f"missing reference {name}")
+            path = playbooks / name
+            with self.subTest(playbook=name):
+                self.assertTrue(path.is_file(), f"missing playbook {name}")
                 text = path.read_text()
                 for phrase in phrases:
                     self.assertIn(phrase, text)

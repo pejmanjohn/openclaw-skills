@@ -184,7 +184,7 @@ Pass expectations:
 - resolves the active profile before running any openclaw commands (Step 0)
 - checks the service manager's error output or log path for the crash reason
 - routes to `common-signatures.md` and `gateway.md`
-- checks `references/incident-log.md` for matching patterns
+- checks `playbooks/incident-log.md` for matching patterns
 - ends with a fix-then-restart sequence, not a restart-then-fix sequence
 
 Fail expectations:

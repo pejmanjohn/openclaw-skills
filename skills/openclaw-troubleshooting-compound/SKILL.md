@@ -28,10 +28,10 @@ Review the current conversation for:
 
 Also read the current state of these files in the **locally installed** `openclaw-troubleshooting` skill directory:
 
-- `references/local/incident-log.md` — to avoid duplicating an existing local entry
-- `references/local/common-signatures.md` — to check if new local error signatures should be added
-- `references/incident-log.md` — shipped patterns, for context (do not write to this file)
-- `references/common-signatures.md` — shipped signatures, for context (do not write to this file)
+- `playbooks/local/incident-log.md` — to avoid duplicating an existing local entry
+- `playbooks/local/common-signatures.md` — to check if new local error signatures should be added
+- `playbooks/incident-log.md` — shipped patterns, for context (do not write to this file)
+- `playbooks/common-signatures.md` — shipped signatures, for context (do not write to this file)
 
 ### 2. Locate the local skill directory
 
@@ -84,8 +84,8 @@ Draft new rows for the common-signatures table if the incident surfaced error st
 
 Before presenting the draft:
 
-- Check `references/local/incident-log.md` for existing local entries with the **same root cause**. If found, propose updating that entry with new details instead of creating a new one.
-- Also check `references/incident-log.md` (shipped patterns). If the shipped file already has a general version of this incident, the local entry should focus on environment-specific details that go beyond the general pattern — don't duplicate what's already shipped.
+- Check `playbooks/local/incident-log.md` for existing local entries with the **same root cause**. If found, propose updating that entry with new details instead of creating a new one.
+- Also check `playbooks/incident-log.md` (shipped patterns). If the shipped file already has a general version of this incident, the local entry should focus on environment-specific details that go beyond the general pattern — don't duplicate what's already shipped.
 - If the root cause is related but distinct, create a new entry.
 
 ### 5. Present and confirm
@@ -107,15 +107,15 @@ Wait for explicit confirmation. The user may:
 
 On confirmation:
 
-1. Create `references/local/` directory if it doesn't exist
-2. If `references/local/incident-log.md` doesn't exist, create it with the header:
+1. Create `playbooks/local/` directory if it doesn't exist
+2. If `playbooks/local/incident-log.md` doesn't exist, create it with the header:
    ```
    # Local Incident Log
    
    Environment-specific learnings from this machine's troubleshooting sessions. This file is gitignored and written by `/openclaw-troubleshooting-compound`.
    ```
-3. Append the incident-log entry to `references/local/incident-log.md` (add a `---` separator before the new entry), or update an existing local entry if deduplicating
-4. If `references/local/common-signatures.md` doesn't exist and there are new signatures, create it with the header and table header:
+3. Append the incident-log entry to `playbooks/local/incident-log.md` (add a `---` separator before the new entry), or update an existing local entry if deduplicating
+4. If `playbooks/local/common-signatures.md` doesn't exist and there are new signatures, create it with the header and table header:
    ```
    # Local Signatures
    
@@ -124,7 +124,7 @@ On confirmation:
    | Signature or symptom | Next action |
    | --- | --- |
    ```
-5. Append any new signature rows to `references/local/common-signatures.md`
+5. Append any new signature rows to `playbooks/local/common-signatures.md`
 6. Show the user the exact changes made
 
 These files are gitignored — they won't show up in `git status` or accidentally get pushed upstream.

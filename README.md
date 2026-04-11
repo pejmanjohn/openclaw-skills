@@ -25,7 +25,7 @@ The cycle works like this:
 
 **Diagnose → Fix → Compound → Repeat**
 
-After resolving an incident, the troubleshooting skill suggests running `/openclaw-troubleshooting-compound`. That companion skill reviews what just happened in the conversation — symptoms, dead ends, root cause, fix — and drafts a structured entry for your **local** incident log (`references/local/incident-log.md`) and any new error signatures (`references/local/common-signatures.md`). You review the draft, confirm, and the learnings are written. No manual writing required. The `local/` directory is gitignored, so your entries never conflict with upstream updates.
+After resolving an incident, the troubleshooting skill suggests running `/openclaw-troubleshooting-compound`. That companion skill reviews what just happened in the conversation — symptoms, dead ends, root cause, fix — and drafts a structured entry for your **local** incident log (`playbooks/local/incident-log.md`) and any new error signatures (`playbooks/local/common-signatures.md`). You review the draft, confirm, and the learnings are written. No manual writing required. The `local/` directory is gitignored, so your entries never conflict with upstream updates.
 
 The next time the troubleshooting skill triggers, it reads the incident log before starting diagnosis, so it arrives with the full history of **your** past incidents instead of starting from zero.
 
@@ -37,8 +37,8 @@ The repo ships two layers of knowledge:
 
 | Layer | Location | Tracked by git | Contains |
 |---|---|---|---|
-| **Shipped** | `references/incident-log.md`, `references/common-signatures.md` | Yes | General patterns, seed entries |
-| **Local** | `references/local/incident-log.md`, `references/local/common-signatures.md` | No (gitignored) | Your environment-specific entries |
+| **Shipped** | `playbooks/incident-log.md`, `playbooks/common-signatures.md` | Yes | General patterns, seed entries |
+| **Local** | `playbooks/local/incident-log.md`, `playbooks/local/common-signatures.md` | No (gitignored) | Your environment-specific entries |
 
 The troubleshooting skill reads both layers. `git pull` updates the shipped patterns without touching your local learnings.
 
@@ -65,7 +65,7 @@ This means:
 
 ### Contributing upstream
 
-If you resolve an incident that reveals a **general pattern** other users would benefit from, you can contribute it back. Generalize the entry (replace machine-specific details with placeholders) and open a PR to `references/incident-log.md` or `references/common-signatures.md`.
+If you resolve an incident that reveals a **general pattern** other users would benefit from, you can contribute it back. Generalize the entry (replace machine-specific details with placeholders) and open a PR to `playbooks/incident-log.md` or `playbooks/common-signatures.md`.
 
 ## Local First, Version Aware
 
@@ -83,7 +83,7 @@ Treat [docs.openclaw.ai](https://docs.openclaw.ai/) as procedural truth for the 
 The source of truth lives in one place:
 
 - `skills/openclaw-troubleshooting/SKILL.md` — entrypoint and routing logic
-- `skills/openclaw-troubleshooting/references/` — deep reference files per symptom class
+- `skills/openclaw-troubleshooting/playbooks/` — deep reference files per symptom class
   - `incident-log.md` — compounding knowledge from resolved incidents
   - `common-signatures.md` — error string → next action lookup table
   - `validation-scenarios.md` — behavioral test scenarios for the skill
@@ -176,14 +176,14 @@ PROJECT_ROOT="/path/to/project"
 ~/src/openclaw-skills/scripts/install-claude-skill.sh --dest "$PROJECT_ROOT/.claude/skills"
 ```
 
-Supporting files next to `SKILL.md` are allowed, so the same `references/` and `scripts/` layout can be reused without creating a second skill source. The canonical entrypoint is `.claude/skills/openclaw-troubleshooting/SKILL.md` in a project install or `~/.claude/skills/openclaw-troubleshooting/SKILL.md` in a personal install.
+Supporting files next to `SKILL.md` are allowed, so the same `playbooks/` and `scripts/` layout can be reused without creating a second skill source. The canonical entrypoint is `.claude/skills/openclaw-troubleshooting/SKILL.md` in a project install or `~/.claude/skills/openclaw-troubleshooting/SKILL.md` in a personal install.
 
 ## Agent-Neutral Vs Agent-Specific
 
 Agent-neutral:
 
 - `skills/openclaw-troubleshooting/SKILL.md`
-- `skills/openclaw-troubleshooting/references/`
+- `skills/openclaw-troubleshooting/playbooks/`
 - `skills/openclaw-troubleshooting/scripts/collect-openclaw-diagnostics.sh`
 
 Agent-specific:
