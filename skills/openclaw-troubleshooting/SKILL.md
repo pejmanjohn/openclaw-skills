@@ -52,27 +52,36 @@ The result must contain both `local/` and `skills/` directories. Use `$REPO_ROOT
   `openclaw channels status --probe`
 - Use `openclaw logs --follow` when you need the live error signature, timing, or confirmation that a fix changed behavior.
 
-## Announce target
+## STOP — Announce the target before ANY diagnostic work
 
-After loading the registry (and after auto-triggering discovery if needed), state in plain language which OpenClaw instance you are about to operate on. This is non-negotiable. Never silently inherit state from a saved registry.
+**Before running ANY `openclaw` command, before reading ANY log file, before doing ANY diagnostic work, you MUST announce the target.**
+
+If you have not produced the announcement below, you have skipped the preflight. Go back to the Quick start and complete it.
+
+1. Load the registry from `$REPO_ROOT/local/state/instances.json` (auto-trigger discovery if the file is missing — see Quick start PREFLIGHT bullet)
+2. Read the default instance from the registry
+3. State the target using this exact format:
 
 Single-instance announcement:
 
 > I'm targeting the OpenClaw I found on this Mac:
-> - port 18789
-> - config `~/.openclaw/openclaw.json`
-> - service `ai.openclaw.gateway`
+> - port [port from registry]
+> - config [configPath from registry]
+> - service [serviceLabel from registry]
+> - evidence: [discoveredFrom from registry]
 
 Multi-instance announcement:
 
 > I'm targeting your saved default OpenClaw:
-> - label `default`
-> - port 18789
-> - config `~/.openclaw/openclaw.json`
+> - label [label from registry]
+> - port [port from registry]
+> - config [configPath from registry]
 >
 > If you want me to use the other one instead, say `use the other one`.
 
-The instance details should come from the registry's `discoveredFrom`, `port`, `configPath`, and `serviceLabel` fields for the saved default instance.
+4. **Only THEN** proceed to the diagnostic ladder, crash-loop checks, or any other troubleshooting work.
+
+Do not skip this step. Do not abbreviate it. Do not fold it into other output. The announcement must be a clear, standalone statement before any diagnostics begin.
 
 ## Override grammar
 

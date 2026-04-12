@@ -46,6 +46,15 @@ The result must contain both `local/` and `skills/` directories. Use `$REPO_ROOT
 - **Always announce the chosen target** in plain language at the end of the run, before handing back to the troubleshooting skill.
 - **Auto-trigger context:** When `openclaw-troubleshooting` activates and the registry is missing, unreadable, or malformed, it pauses and hands off to this skill. After this skill writes the registry and announces the target, troubleshooting resumes.
 
+## When auto-triggered by troubleshooting
+
+When you were called because troubleshooting found no registry (not because the user explicitly invoked `/openclaw-instance-discovery`), the user is waiting for troubleshooting to continue. Minimize friction:
+
+- **Single instance found with high confidence?** Save immediately as `default`. Do NOT ask for confirmation. Do NOT pause. Write the registry, announce the target, and return control.
+- **Single instance found with medium confidence?** Ask one yes/no question: "I found one likely OpenClaw on this Mac. Want me to save it as your default troubleshooting target?"
+- **Multiple instances found?** Ask ONLY which should be the default: "I found two OpenClaw instances. Which should I target by default?" Use `default` / `instance-2` labels.
+- **After saving the registry, announce the target and STOP.** Return control to troubleshooting. Do NOT ask follow-up questions. Do NOT offer to rescan. The user wants troubleshooting help, not a discovery conversation.
+
 ## Workflow
 
 1. **Run the 6-phase discovery sequence.** See `playbooks/discovery-sequence.md` for the exact commands and what to do with their output.
