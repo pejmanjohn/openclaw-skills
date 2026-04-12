@@ -17,6 +17,7 @@ Use these to verify that the skill routes correctly and asks for evidence that c
 - Doctor fix had no effect on a non-default profile
 - Dashboard shows auth lockout after crash loop
 - Dashboard shows device token mismatch
+- First-time user with no instance registry
 
 ## Scenario: missing command from website docs
 
@@ -247,3 +248,31 @@ Fail expectations:
 
 - manually rotates device tokens without first checking the dashboard URL and port
 - treats this as a pairing issue without verifying basic connectivity and port match
+
+## Scenario: first-time user with no instance registry
+
+Prompt:
+"openclaw is broken"
+
+(Run on a Mac where `local/state/instances.json` does not exist yet. The user is a non-technical first-time user.)
+
+Pass expectations:
+
+- recognizes the vague phrasing as a troubleshooting trigger (matches the natural-language description)
+- on activation, attempts to load `<repo-root>/local/state/instances.json` and finds it missing
+- automatically hands off to `openclaw-instance-discovery` without asking the user to invoke a separate command
+- discovery runs the 6-phase sequence silently and produces a draft machine model
+- in the single-instance common case, auto-saves the registry with `id` and `label` both set to `default` and asks no questions
+- in the multi-instance case, presents candidates in plain language with neutral descriptions like "default launchd service on port 18789" (not "your prod install")
+- after writing the registry, returns control to the troubleshooting skill
+- troubleshooting announces the chosen target in plain language before any deeper diagnostics, including the `discoveredFrom` evidence string for trust
+- only then proceeds to the actual troubleshooting work the user originally asked for
+
+Fail expectations:
+
+- asks the user "which OpenClaw install should I use?" without first attempting discovery
+- refuses to act because the registry is missing
+- writes an empty or invalid registry and proceeds blindly
+- guesses human semantics like "I'll target your prod install" without evidence
+- silently inherits state from no registry without announcing the target
+- runs deeper diagnostics before announcing what it's targeting

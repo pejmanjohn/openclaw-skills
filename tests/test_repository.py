@@ -114,6 +114,7 @@ class SkillMetadataTests(unittest.TestCase):
                 "## Scenario: exec suddenly asks for approval",
                 "## Scenario: safe config change and validation",
                 "## Scenario: plugin install missing openclaw.extensions",
+                "## Scenario: first-time user with no instance registry",
                 "Pass expectations:",
             ],
         }
