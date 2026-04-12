@@ -438,3 +438,67 @@ class InstanceDiscoverySkillMetadataTests(unittest.TestCase):
     def test_skill_grounds_in_openclaw_docs(self) -> None:
         text = self.SKILL_PATH.read_text()
         self.assertIn("docs.openclaw.ai", text)
+
+
+class DiscoverySequencePlaybookTests(unittest.TestCase):
+    PLAYBOOK_PATH = (
+        ROOT / "skills" / "openclaw-instance-discovery"
+        / "playbooks" / "discovery-sequence.md"
+    )
+
+    def test_playbook_exists(self) -> None:
+        self.assertTrue(self.PLAYBOOK_PATH.is_file())
+
+    def test_playbook_has_six_phases(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        for phase in [
+            "## Phase 1",
+            "## Phase 2",
+            "## Phase 3",
+            "## Phase 4",
+            "## Phase 5",
+            "## Phase 6",
+        ]:
+            with self.subTest(phase=phase):
+                self.assertIn(phase, text)
+
+    def test_phase_1_uses_native_openclaw_commands(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        for command in [
+            "openclaw --version",
+            "openclaw gateway status --deep --json",
+            "openclaw gateway probe --json",
+            "openclaw config file",
+        ]:
+            with self.subTest(command=command):
+                self.assertIn(command, text)
+
+    def test_phase_2_inspects_launchd_layout(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        for needle in [
+            "launchctl list",
+            "ai.openclaw",
+            "OPENCLAW_PROFILE",
+            "OPENCLAW_CONFIG_PATH",
+            "OPENCLAW_STATE_DIR",
+            "OPENCLAW_GATEWAY_PORT",
+        ]:
+            with self.subTest(needle=needle):
+                self.assertIn(needle, text)
+
+    def test_phase_4_documents_url_token_fallback(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        self.assertIn("--url ws://127.0.0.1", text)
+        self.assertIn("--token", text)
+        self.assertIn("--profile", text)
+
+    def test_phase_6_handles_single_and_multi_instance_cases(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        self.assertIn("Single-instance", text)
+        self.assertIn("Multi-instance", text)
+        self.assertIn("default", text)
+        self.assertIn("instance-2", text)
+
+    def test_playbook_grounds_in_openclaw_docs(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        self.assertIn("docs.openclaw.ai", text)
