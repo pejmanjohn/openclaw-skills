@@ -7,12 +7,40 @@ description: Use when OpenClaw install/setup, gateway, dashboard/control UI, cha
 
 Treat the local machine as the primary evidence source. The agent and OpenClaw run on the same host, so local CLI output, config files, runtime state, and logs are runtime truth. Treat `docs.openclaw.ai` as procedural truth for the latest release, but verify every command and flag against the installed binary because website docs may be ahead of the local version.
 
+## Finding the repo root
+
+**IMPORTANT:** The repo root is NOT your current working directory. It is the directory where the skill source checkout lives on disk. You must resolve it before reading or writing any `local/` path.
+
+Run this command to find it:
+
+```bash
+REPO_ROOT=""
+for d in \
+  ~/.claude/skills/openclaw-instance-discovery \
+  ~/.claude/skills/openclaw-troubleshooting \
+  ~/.openclaw/skills/openclaw-troubleshooting \
+  ~/.codex/skills/openclaw-troubleshooting \
+  ~/src/openclaw-skills/skills/openclaw-troubleshooting; do
+  if [ -e "$d" ]; then
+    resolved="$(readlink "$d" 2>/dev/null || echo "$d")"
+    candidate="$(cd "$resolved/../.." 2>/dev/null && pwd)"
+    if [ -d "$candidate/local" ] && [ -d "$candidate/skills" ]; then
+      REPO_ROOT="$candidate"
+      break
+    fi
+  fi
+done
+echo "${REPO_ROOT:?Could not find openclaw-skills repo root}"
+```
+
+The result must contain both `local/` and `skills/` directories. Use `$REPO_ROOT` for all paths below.
+
 ## Quick start
 
-- **PREFLIGHT — Load the instance registry.** Read `<repo-root>/local/state/instances.json` (the repo root is two directories up from this SKILL.md, even when invoked through a symlinked install). If the file is missing, unreadable, or malformed, **auto-trigger `openclaw-instance-discovery`** before doing anything else. After discovery writes the registry, resume here. Then announce the chosen target in plain language to the user before any further diagnostics — see the "Announce target" section below.
+- **PREFLIGHT — Load the instance registry.** Read `$REPO_ROOT/local/state/instances.json` (see "Finding the repo root" above — the repo root is NOT your CWD). If the file is missing, unreadable, or malformed, **auto-trigger `openclaw-instance-discovery`** before doing anything else. After discovery writes the registry, resume from the SECOND bullet below ("FIRST: Resolve the active profile"). Then announce the chosen target in plain language — see the "STOP — Announce target" section below.
 - **FIRST: Resolve the active profile.** Check `openclaw config file` AND the service manager env vars (`OPENCLAW_PROFILE`, `OPENCLAW_STATE_DIR`, `OPENCLAW_CONFIG_PATH`). If they differ, use `--profile <X>` on every command. See `playbooks/triage.md` Step 0.
 - **If crash-looping:** Stop the service immediately before diagnosing. Crash loops accumulate auth lockout.
-- **Check past incidents:** Read `playbooks/incident-log.md` (shipped patterns) AND `<repo-root>/local/memory/incident-log.md` (if it exists — environment-specific learnings) before starting fresh diagnosis. The repo root is two directories up from this SKILL.md (`../../`), even when invoked through a symlinked install.
+- **Check past incidents:** Read `playbooks/incident-log.md` (shipped patterns) AND `$REPO_ROOT/local/memory/incident-log.md` (if it exists — environment-specific learnings) before starting fresh diagnosis.
 - Confirm the installed build and local command surface: `openclaw --version`, `openclaw help`, `openclaw <subcommand> --help`.
 - Locate the active config before diagnosing behavior: `openclaw config file`.
 - Run the fast ladder in order and stop when the failure class is obvious:
@@ -75,9 +103,9 @@ Read only the file that matches the observed symptom:
 - `playbooks/channels.md` -> transport versus delivery, allowlists, mentions, pairing, connected-but-no-replies routing.
 - `playbooks/tools-and-nodes.md` -> exec approvals, browser failures, tool routing, and node pairing versus permissions versus approvals.
 - `playbooks/auth-and-pairing.md` -> DM pairing, device pairing, token mismatch, launchctl or daemon env overrides.
-- `playbooks/common-signatures.md` -> terse log or error signature to next action lookup. Also check `<repo-root>/local/memory/common-signatures.md` if it exists.
+- `playbooks/common-signatures.md` -> terse log or error signature to next action lookup. Also check `$REPO_ROOT/local/memory/common-signatures.md` if it exists.
 - `playbooks/validation-scenarios.md` -> scenario prompts with pass or fail expectations for trigger choice, evidence gathering, routing, and verifiable next steps.
-- `playbooks/incident-log.md` -> general post-incident patterns (shipped with repo). Also check `<repo-root>/local/memory/incident-log.md` for environment-specific learnings from past sessions on this machine.
+- `playbooks/incident-log.md` -> general post-incident patterns (shipped with repo). Also check `$REPO_ROOT/local/memory/incident-log.md` for environment-specific learnings from past sessions on this machine.
 
 ## After resolving an incident
 

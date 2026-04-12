@@ -16,16 +16,43 @@ drift between these docs and the implementation.
 The registry lives at:
 
 ```
-<repo-root>/local/state/instances.json
+$REPO_ROOT/local/state/instances.json
 ```
 
-The repo root is resolved via the "walk-up-two" pattern: start from the running
-skill's own directory (`skills/openclaw-instance-discovery/`), then walk up two
-levels to reach the repo root, then descend into `local/state/`. This keeps the
-path deterministic regardless of where on disk the repo is cloned.
+### How to find `REPO_ROOT`
+
+**IMPORTANT:** The repo root is NOT your current working directory. It is the directory where the skill source checkout lives on disk. You must resolve it explicitly.
+
+Run this command to locate the repo root:
+
+```bash
+REPO_ROOT=""
+for d in \
+  ~/.claude/skills/openclaw-instance-discovery \
+  ~/.claude/skills/openclaw-troubleshooting \
+  ~/.openclaw/skills/openclaw-troubleshooting \
+  ~/.codex/skills/openclaw-troubleshooting \
+  ~/src/openclaw-skills/skills/openclaw-troubleshooting; do
+  if [ -e "$d" ]; then
+    resolved="$(readlink "$d" 2>/dev/null || echo "$d")"
+    candidate="$(cd "$resolved/../.." 2>/dev/null && pwd)"
+    if [ -d "$candidate/local" ] && [ -d "$candidate/skills" ]; then
+      REPO_ROOT="$candidate"
+      break
+    fi
+  fi
+done
+echo "${REPO_ROOT:?Could not find openclaw-skills repo root}"
+```
+
+**Verification:** The result must contain both a `local/` directory and a `skills/` directory. If it doesn't, the resolution failed — try the fallback paths manually.
+
+**Why this matters:** In testing, agents that skipped this resolution and used the current working directory instead wrote `instances.json` into the wrong location entirely (e.g., the user's Documents folder). The registry must live in the skill repo's `local/state/`, not anywhere else.
 
 The `local/state/` directory is gitignored; only `.gitkeep` is tracked. The
 registry file is written at runtime and must never be committed.
+
+All other skills that reference `$REPO_ROOT` (troubleshooting, compound) should use this same resolution command.
 
 ---
 

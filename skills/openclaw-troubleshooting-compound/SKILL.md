@@ -28,25 +28,40 @@ Review the current conversation for:
 
 Also read the current state of these files:
 
-- `<repo-root>/local/memory/incident-log.md` — to avoid duplicating an existing local entry
-- `<repo-root>/local/memory/common-signatures.md` — to check if new local error signatures should be added
-- `<repo-root>/skills/openclaw-troubleshooting/playbooks/incident-log.md` — shipped patterns, for context (do not write to this file)
-- `<repo-root>/skills/openclaw-troubleshooting/playbooks/common-signatures.md` — shipped signatures, for context (do not write to this file)
+- `$REPO_ROOT/local/memory/incident-log.md` — to avoid duplicating an existing local entry
+- `$REPO_ROOT/local/memory/common-signatures.md` — to check if new local error signatures should be added
+- `$REPO_ROOT/skills/openclaw-troubleshooting/playbooks/incident-log.md` — shipped patterns, for context (do not write to this file)
+- `$REPO_ROOT/skills/openclaw-troubleshooting/playbooks/common-signatures.md` — shipped signatures, for context (do not write to this file)
 
 ### 2. Locate the shared local memory directory
 
 The compound skill writes to the shared `local/memory/` directory at the repo root — not to any skill-specific subdirectory. All installs (Claude Code, Codex, OpenClaw itself) that symlink back to the same source checkout share this directory automatically.
 
-To find the repo root, resolve this skill's own path (following any symlinks) and walk up two directories:
-`<resolved skill path>/../../`
+**IMPORTANT:** The repo root is NOT your current working directory. It is the directory where the skill source checkout lives on disk. You must resolve it explicitly.
 
-If the walk-up produces a directory that contains `skills/` and `local/`, that is the repo root.
+Run this command to find the repo root:
 
-If the walk-up fails or the result looks wrong, fall back to these locations in order:
+```bash
+REPO_ROOT=""
+for d in \
+  ~/.claude/skills/openclaw-instance-discovery \
+  ~/.claude/skills/openclaw-troubleshooting \
+  ~/.openclaw/skills/openclaw-troubleshooting \
+  ~/.codex/skills/openclaw-troubleshooting \
+  ~/src/openclaw-skills/skills/openclaw-troubleshooting; do
+  if [ -e "$d" ]; then
+    resolved="$(readlink "$d" 2>/dev/null || echo "$d")"
+    candidate="$(cd "$resolved/../.." 2>/dev/null && pwd)"
+    if [ -d "$candidate/local" ] && [ -d "$candidate/skills" ]; then
+      REPO_ROOT="$candidate"
+      break
+    fi
+  fi
+done
+echo "${REPO_ROOT:?Could not find openclaw-skills repo root}"
+```
 
-1. `~/src/openclaw-skills/local/memory/`
-2. `~/.openclaw/local/memory/`
-3. The workspace `local/memory/` if present
+The result must contain both `local/` and `skills/` directories. Then use `$REPO_ROOT/local/memory/` for all read and write operations below.
 
 ### 3. Draft the learnings
 
@@ -88,8 +103,8 @@ Draft new rows for the common-signatures table if the incident surfaced error st
 
 Before presenting the draft:
 
-- Check `<repo-root>/local/memory/incident-log.md` for existing local entries with the **same root cause**. If found, propose updating that entry with new details instead of creating a new one.
-- Also check `<repo-root>/skills/openclaw-troubleshooting/playbooks/incident-log.md` (shipped patterns). If the shipped file already has a general version of this incident, the local entry should focus on environment-specific details that go beyond the general pattern — don't duplicate what's already shipped.
+- Check `$REPO_ROOT/local/memory/incident-log.md` for existing local entries with the **same root cause**. If found, propose updating that entry with new details instead of creating a new one.
+- Also check `$REPO_ROOT/skills/openclaw-troubleshooting/playbooks/incident-log.md` (shipped patterns). If the shipped file already has a general version of this incident, the local entry should focus on environment-specific details that go beyond the general pattern — don't duplicate what's already shipped.
 - If the root cause is related but distinct, create a new entry.
 
 ### 5. Present and confirm
@@ -111,15 +126,15 @@ Wait for explicit confirmation. The user may:
 
 On confirmation:
 
-1. Create `<repo-root>/local/memory/` directory if it doesn't exist
-2. If `<repo-root>/local/memory/incident-log.md` doesn't exist, create it with the header:
+1. Create `$REPO_ROOT/local/memory/` directory if it doesn't exist
+2. If `$REPO_ROOT/local/memory/incident-log.md` doesn't exist, create it with the header:
    ```
    # Local Incident Log
    
    Environment-specific learnings from this machine's troubleshooting sessions. This file is gitignored and written by `/openclaw-troubleshooting-compound`.
    ```
-3. Append the incident-log entry to `<repo-root>/local/memory/incident-log.md` (add a `---` separator before the new entry), or update an existing local entry if deduplicating
-4. If `<repo-root>/local/memory/common-signatures.md` doesn't exist and there are new signatures, create it with the header and table header:
+3. Append the incident-log entry to `$REPO_ROOT/local/memory/incident-log.md` (add a `---` separator before the new entry), or update an existing local entry if deduplicating
+4. If `$REPO_ROOT/local/memory/common-signatures.md` doesn't exist and there are new signatures, create it with the header and table header:
    ```
    # Local Signatures
    
@@ -128,7 +143,7 @@ On confirmation:
    | Signature or symptom | Next action |
    | --- | --- |
    ```
-5. Append any new signature rows to `<repo-root>/local/memory/common-signatures.md`
+5. Append any new signature rows to `$REPO_ROOT/local/memory/common-signatures.md`
 6. Show the user the exact changes made
 
 These files are gitignored — they won't show up in `git status` or accidentally get pushed upstream.

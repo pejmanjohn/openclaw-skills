@@ -9,9 +9,37 @@ Build a registry of OpenClaw Gateway instances on this machine so the troublesho
 
 The goal is **not** to reverse-engineer OpenClaw's internal model. The goal is to be exceptionally good at navigating the system OpenClaw already exposes, plus the documented platform behaviors of launchd on macOS.
 
+## Finding the repo root
+
+**IMPORTANT:** The repo root is NOT your current working directory. It is the directory where the skill source checkout lives on disk. You must resolve it before reading or writing any `local/` path.
+
+Run this command to find it:
+
+```bash
+REPO_ROOT=""
+for d in \
+  ~/.claude/skills/openclaw-instance-discovery \
+  ~/.claude/skills/openclaw-troubleshooting \
+  ~/.openclaw/skills/openclaw-troubleshooting \
+  ~/.codex/skills/openclaw-troubleshooting \
+  ~/src/openclaw-skills/skills/openclaw-troubleshooting; do
+  if [ -e "$d" ]; then
+    resolved="$(readlink "$d" 2>/dev/null || echo "$d")"
+    candidate="$(cd "$resolved/../.." 2>/dev/null && pwd)"
+    if [ -d "$candidate/local" ] && [ -d "$candidate/skills" ]; then
+      REPO_ROOT="$candidate"
+      break
+    fi
+  fi
+done
+echo "${REPO_ROOT:?Could not find openclaw-skills repo root}"
+```
+
+The result must contain both `local/` and `skills/` directories. Use `$REPO_ROOT` for all paths below. See `playbooks/registry-contract.md` for the full explanation.
+
 ## Quick start
 
-- **Goal:** by the end of a discovery run, this machine has a saved registry at `<repo-root>/local/state/instances.json` with a chosen default target.
+- **Goal:** by the end of a discovery run, this machine has a saved registry at `$REPO_ROOT/local/state/instances.json` with a chosen default target.
 - **Single-instance common case:** auto-save with no questions asked.
 - **Multi-instance case:** ask once for the default; auto-label as `default` / `instance-2`. Don't front-load naming.
 - **Never dead-end:** if discovery finds nothing, walk through the fallback ladder before asking the user one tractable question.
@@ -25,7 +53,7 @@ The goal is **not** to reverse-engineer OpenClaw's internal model. The goal is t
 3. **Cluster the evidence into candidate Gateway identities.** Multiple signals must line up before you call something an "instance" — service label, config path, state dir, port, optional profile.
 4. **Verify each candidate explicitly with `--url` + token.** Bare `--profile X` routing is empirically unreliable in multi-instance setups. The `--url` + per-candidate auth token fallback is documented in `playbooks/discovery-sequence.md` Phase 4.
 5. **Present candidates in plain language and confirm with the minimum required input.** Use neutral descriptions like "default launchd service on port 18789" rather than human guesses like "your prod install."
-6. **Save the registry** at `<repo-root>/local/state/instances.json`. See `playbooks/registry-contract.md` for the v1 schema and field guidance.
+6. **Save the registry** at `$REPO_ROOT/local/state/instances.json`. See `playbooks/registry-contract.md` for the v1 schema and field guidance.
 7. **Announce the chosen default target** in plain language so the user knows what subsequent troubleshooting will operate on.
 
 ## Reference map

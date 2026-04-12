@@ -259,7 +259,7 @@ Prompt:
 Pass expectations:
 
 - recognizes the vague phrasing as a troubleshooting trigger (matches the natural-language description)
-- on activation, attempts to load `<repo-root>/local/state/instances.json` and finds it missing
+- on activation, attempts to load `$REPO_ROOT/local/state/instances.json` and finds it missing
 - automatically hands off to `openclaw-instance-discovery` without asking the user to invoke a separate command
 - discovery runs the 6-phase sequence silently and produces a draft machine model
 - in the single-instance common case, auto-saves the registry with `id` and `label` both set to `default` and asks no questions

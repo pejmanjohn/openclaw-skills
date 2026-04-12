@@ -14,7 +14,7 @@ Use this page for the first minute of diagnosis and to decide which deeper runbo
 
 ### Step 0: Verify the saved instance still matches reality (Option B)
 
-The preflight step in `SKILL.md` has already loaded `<repo-root>/local/state/instances.json` and announced the chosen target. Step 0's job is to **verify** that the saved instance still matches reality before running deeper diagnostics. We do not re-derive from scratch on every run — that's discovery's job, and discovery already ran (either now via auto-trigger or in a prior session).
+The preflight step in `SKILL.md` has already loaded `$REPO_ROOT/local/state/instances.json` and announced the chosen target. Step 0's job is to **verify** that the saved instance still matches reality before running deeper diagnostics. We do not re-derive from scratch on every run — that's discovery's job, and discovery already ran (either now via auto-trigger or in a prior session).
 
 This is Option B from the workstream plan: the registry provides the target context, and Step 0 evolves from "derive" to "verify." Live verification still matters; we're just not duplicating discovery's work.
 
