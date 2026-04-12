@@ -145,6 +145,8 @@ class RepositoryDocumentationTests(unittest.TestCase):
         text = (ROOT / "README.md").read_text()
         for phrase in [
             "openclaw-troubleshooting",
+            "openclaw-instance-discovery",
+            "openclaw-troubleshooting-compound",
             "local binary/help/config/state/logs",
             "docs.openclaw.ai",
             "latest release",
@@ -164,8 +166,15 @@ class RepositoryDocumentationTests(unittest.TestCase):
             "install-claude-skill.sh",
             ".claude/skills/openclaw-troubleshooting/SKILL.md",
             "Future expansion",
+            "## Instance Discovery",
+            "## Shared Local Memory",
+            "local/memory/",
+            "local/state/",
+            "instances.json",
+            "auto-trigger",
         ]:
-            self.assertIn(phrase, text)
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, text)
 
     def test_license_is_mit(self) -> None:
         text = (ROOT / "LICENSE").read_text()
