@@ -9,6 +9,7 @@ Treat the local machine as the primary evidence source. The agent and OpenClaw r
 
 ## Quick start
 
+- **PREFLIGHT — Load the instance registry.** Read `<repo-root>/local/state/instances.json` (the repo root is two directories up from this SKILL.md, even when invoked through a symlinked install). If the file is missing, unreadable, or malformed, **auto-trigger `openclaw-instance-discovery`** before doing anything else. After discovery writes the registry, resume here. Then announce the chosen target in plain language to the user before any further diagnostics — see the "Announce target" section below.
 - **FIRST: Resolve the active profile.** Check `openclaw config file` AND the service manager env vars (`OPENCLAW_PROFILE`, `OPENCLAW_STATE_DIR`, `OPENCLAW_CONFIG_PATH`). If they differ, use `--profile <X>` on every command. See `playbooks/triage.md` Step 0.
 - **If crash-looping:** Stop the service immediately before diagnosing. Crash loops accumulate auth lockout.
 - **Check past incidents:** Read `playbooks/incident-log.md` (shipped patterns) AND `<repo-root>/local/memory/incident-log.md` (if it exists — environment-specific learnings) before starting fresh diagnosis. The repo root is two directories up from this SKILL.md (`../../`), even when invoked through a symlinked install.
@@ -23,9 +24,41 @@ Treat the local machine as the primary evidence source. The agent and OpenClaw r
   `openclaw channels status --probe`
 - Use `openclaw logs --follow` when you need the live error signature, timing, or confirmation that a fix changed behavior.
 
+## Announce target
+
+After loading the registry (and after auto-triggering discovery if needed), state in plain language which OpenClaw instance you are about to operate on. This is non-negotiable. Never silently inherit state from a saved registry.
+
+Single-instance announcement:
+
+> I'm targeting the OpenClaw I found on this Mac:
+> - port 18789
+> - config `~/.openclaw/openclaw.json`
+> - service `ai.openclaw.gateway`
+
+Multi-instance announcement:
+
+> I'm targeting your saved default OpenClaw:
+> - label `default`
+> - port 18789
+> - config `~/.openclaw/openclaw.json`
+>
+> If you want me to use the other one instead, say `use the other one`.
+
+The instance details should come from the registry's `discoveredFrom`, `port`, `configPath`, and `serviceLabel` fields for the saved default instance.
+
+## Override grammar
+
+The user can switch the active target at any point in the conversation with one of these phrases:
+
+- `use the other one` — switch to the next instance in the registry that isn't the current target
+- `use <label>` — switch to the instance with the matching `label` field
+- `use the one on <port>` — switch to the instance with the matching `port` field
+
+After an override, restate the new target clearly using the same plain-language announcement format above. Then continue troubleshooting against the new target.
+
 ## Workflow
 
-0. **Resolve profile and stop any crash loops** — see Quick start. This is non-negotiable.
+0. **Preflight: load the instance registry, auto-trigger discovery if needed, and announce the target.** Then resolve profile and stop any crash loops — see Quick start and the Announce target section. This is non-negotiable. Without a known target, every other step risks operating on the wrong install.
 1. Verify local version and command availability with `openclaw --version`, `openclaw help`, and the specific `openclaw <subcommand> --help` pages you plan to use.
 2. Find the active config path with `openclaw config file`, then inspect local config, env overrides, launchctl or service environment, and current logs before changing anything.
 3. Classify the problem quickly: gateway/runtime, dashboard or Control UI, channels and delivery, auth or pairing, config validation, tools, nodes, or plugin surface.

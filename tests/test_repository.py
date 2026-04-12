@@ -609,3 +609,25 @@ class RegistryContractPlaybookTests(unittest.TestCase):
         self.assertIn("Ownership", text)
         self.assertIn("writes", text.lower())
         self.assertIn("reads", text.lower())
+
+
+class TroubleshootingRegistryIntegrationTests(unittest.TestCase):
+    def test_skill_documents_registry_preflight(self) -> None:
+        text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
+        self.assertIn("local/state/instances.json", text)
+        self.assertIn("preflight", text.lower())
+
+    def test_skill_documents_auto_trigger_to_discovery(self) -> None:
+        text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
+        self.assertIn("openclaw-instance-discovery", text)
+        self.assertIn("auto-trigger", text.lower())
+        self.assertIn("missing", text.lower())
+
+    def test_skill_documents_announce_target_step(self) -> None:
+        text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
+        self.assertIn("announce", text.lower())
+        self.assertIn("plain language", text.lower())
+
+    def test_skill_documents_override_grammar(self) -> None:
+        text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
+        self.assertIn("use the other one", text.lower())
