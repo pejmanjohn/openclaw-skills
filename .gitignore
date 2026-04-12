@@ -6,3 +6,4 @@ local/**
 !local/state/
 !local/memory/.gitkeep
 !local/state/.gitkeep
+__pycache__/
