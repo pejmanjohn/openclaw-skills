@@ -502,3 +502,43 @@ class DiscoverySequencePlaybookTests(unittest.TestCase):
     def test_playbook_grounds_in_openclaw_docs(self) -> None:
         text = self.PLAYBOOK_PATH.read_text()
         self.assertIn("docs.openclaw.ai", text)
+
+
+class FallbackLadderPlaybookTests(unittest.TestCase):
+    PLAYBOOK_PATH = (
+        ROOT / "skills" / "openclaw-instance-discovery"
+        / "playbooks" / "fallback-ladder.md"
+    )
+
+    def test_playbook_exists(self) -> None:
+        self.assertTrue(self.PLAYBOOK_PATH.is_file())
+
+    def test_ladder_checks_common_install_paths(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        for path in [
+            "/usr/local/bin/openclaw",
+            "/opt/homebrew/bin/openclaw",
+            "/Applications/OpenClaw.app",
+        ]:
+            with self.subTest(path=path):
+                self.assertIn(path, text)
+
+    def test_ladder_checks_common_config_locations(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        for path in [
+            "~/.openclaw/openclaw.json",
+            "~/Library/Application Support/OpenClaw",
+        ]:
+            with self.subTest(path=path):
+                self.assertIn(path, text)
+
+    def test_ladder_includes_last_resort_user_question(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        self.assertIn("last resort", text.lower())
+        self.assertIn("never dead-end", text.lower())
+
+    def test_ladder_mentions_walking_the_steps_in_order(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        for step in ["Step 1", "Step 2", "Step 3", "Step 4", "Step 5", "Step 6"]:
+            with self.subTest(step=step):
+                self.assertIn(step, text)
