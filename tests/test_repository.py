@@ -1,3 +1,4 @@
+import json
 import os
 import pathlib
 import subprocess
@@ -542,3 +543,69 @@ class FallbackLadderPlaybookTests(unittest.TestCase):
         for step in ["Step 1", "Step 2", "Step 3", "Step 4", "Step 5", "Step 6"]:
             with self.subTest(step=step):
                 self.assertIn(step, text)
+
+
+class RegistryContractPlaybookTests(unittest.TestCase):
+    PLAYBOOK_PATH = (
+        ROOT / "skills" / "openclaw-instance-discovery"
+        / "playbooks" / "registry-contract.md"
+    )
+
+    def test_playbook_exists(self) -> None:
+        self.assertTrue(self.PLAYBOOK_PATH.is_file())
+
+    def _extract_first_json_block(self) -> dict:
+        text = self.PLAYBOOK_PATH.read_text()
+        marker = "```json"
+        start = text.index(marker) + len(marker)
+        end = text.index("```", start)
+        return json.loads(text[start:end])
+
+    def test_example_registry_parses_as_json(self) -> None:
+        sample = self._extract_first_json_block()
+        self.assertIsInstance(sample, dict)
+
+    def test_example_registry_has_required_top_level_fields(self) -> None:
+        sample = self._extract_first_json_block()
+        for field in ("version", "updatedAt", "defaultInstanceId", "instances"):
+            with self.subTest(field=field):
+                self.assertIn(field, sample)
+
+    def test_example_registry_version_is_one(self) -> None:
+        sample = self._extract_first_json_block()
+        self.assertEqual(sample["version"], 1)
+
+    def test_example_registry_default_instance_resolves(self) -> None:
+        sample = self._extract_first_json_block()
+        ids = [inst["id"] for inst in sample["instances"]]
+        self.assertIn(sample["defaultInstanceId"], ids)
+
+    def test_each_instance_has_required_fields(self) -> None:
+        sample = self._extract_first_json_block()
+        for inst in sample["instances"]:
+            with self.subTest(instance_id=inst.get("id")):
+                self.assertIn("id", inst)
+                self.assertIn("label", inst)
+
+    def test_each_instance_includes_discoveredFrom(self) -> None:
+        sample = self._extract_first_json_block()
+        for inst in sample["instances"]:
+            with self.subTest(instance_id=inst.get("id")):
+                self.assertIn("discoveredFrom", inst)
+                self.assertIsInstance(inst["discoveredFrom"], str)
+                self.assertTrue(len(inst["discoveredFrom"]) > 0)
+
+    def test_playbook_documents_field_guidance(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        for field in [
+            "id", "label", "kind", "profile", "port",
+            "configPath", "stateDir", "serviceLabel", "discoveredFrom",
+        ]:
+            with self.subTest(field=field):
+                self.assertIn(field, text)
+
+    def test_playbook_documents_ownership(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        self.assertIn("Ownership", text)
+        self.assertIn("writes", text.lower())
+        self.assertIn("reads", text.lower())
