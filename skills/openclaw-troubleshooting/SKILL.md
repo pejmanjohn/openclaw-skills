@@ -1,6 +1,6 @@
 ---
 name: openclaw-troubleshooting
-description: Use when OpenClaw install/setup, gateway, dashboard/control UI, no-replies channels, auth/pairing, config, exec approvals, tool/node, or plugins need troubleshooting, diagnosis, repair, or safe reconfiguration.
+description: Use when OpenClaw install/setup, gateway, dashboard/control UI, channels, auth/pairing, config, exec approvals, tool/node, or plugins need troubleshooting, diagnosis, repair, or safe reconfiguration. Also triggers on natural-language phrasings like "openclaw isn't working", "openclaw isn't responding", "my agents aren't replying" or "not replying", "the dashboard won't load", "openclaw won't start", "fix my openclaw", "something's wrong with openclaw". Auto-loads the saved instance registry from local/state/instances.json on activation; auto-triggers openclaw-instance-discovery if the registry is missing.
 ---
 
 # OpenClaw Troubleshooting

@@ -125,6 +125,19 @@ class SkillMetadataTests(unittest.TestCase):
                 for phrase in phrases:
                     self.assertIn(phrase, text)
 
+    def test_skill_description_includes_natural_language_phrasings(self) -> None:
+        text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
+        front = text.split("---")[1] if text.startswith("---") else text.split("---")[0]
+        for phrase in [
+            "isn't working",
+            "isn't responding",
+            "not replying",
+            "won't load",
+            "won't start",
+        ]:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, front)
+
 
 class RepositoryDocumentationTests(unittest.TestCase):
     def test_readme_covers_installation_and_local_first_model(self) -> None:
