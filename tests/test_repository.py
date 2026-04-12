@@ -77,7 +77,15 @@ class SkillMetadataTests(unittest.TestCase):
     def test_reference_files_exist_and_include_core_invariants(self) -> None:
         playbooks = ROOT / "skills" / "openclaw-troubleshooting" / "playbooks"
         expected = {
-            "triage.md": ["# Triage", "## Contents", "## First 60 seconds", "openclaw [--profile X] status --all"],
+            "triage.md": [
+                "# Triage",
+                "## Contents",
+                "## First 60 seconds",
+                "openclaw [--profile X] status --all",
+                "instances.json",
+                "verify",
+                "Option B",
+            ],
             "gateway.md": ["# Gateway", "## Contents", "## Core checks", "openclaw gateway probe"],
             "config.md": ["# Config", "## Contents", "## Active config path", "openclaw config file"],
             "channels.md": ["# Channels", "## Contents", "## Core checks", "openclaw channels status --probe"],
