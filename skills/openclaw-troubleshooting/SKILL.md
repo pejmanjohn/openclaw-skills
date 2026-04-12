@@ -93,6 +93,10 @@ The user can switch the active target at any point in the conversation with one 
 
 After an override, restate the new target clearly using the same plain-language announcement format above. Then continue troubleshooting against the new target.
 
+## Do NOT write to Claude Code's memory system
+
+Troubleshooting data — target selection, diagnostic results, instance information — lives ONLY in the skill repo's `local/` directory (specifically `$REPO_ROOT/local/state/instances.json` for the registry). Do NOT write troubleshooting or instance data to Claude Code's memory system (`memory/`, `MEMORY.md`, or any workspace memory files). These are different systems with different purposes.
+
 ## Read-only discipline
 
 **Diagnosis is read-only. Do NOT modify config, disable plugins, restart services, or make any changes to the OpenClaw installation during diagnosis.**

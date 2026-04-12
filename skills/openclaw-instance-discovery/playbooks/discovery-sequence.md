@@ -181,6 +181,16 @@ Five signals can link evidence to the same instance:
 4. If Phase 1 reported a running gateway whose port does not match any plist,
    create an additional candidate representing that "unknown origin" instance.
 
+### Deduplication rule
+
+A Mac app install (`/Applications/OpenClaw.app`) and its corresponding launchd service (e.g., `ai.openclaw.gateway`) are the **same instance**, not two. The Mac app is packaging; the launchd service is the Gateway. Do not count them separately.
+
+Similarly, an OpenClaw CLI binary is a client that connects to a Gateway — it is not a separate instance. Nodes, plugins, and other client applications are also not instances.
+
+**Only count distinct Gateway processes** — identified by distinct (service label + port + config path) combinations. If two evidence sources point at the same port and config path, they are the same instance.
+
+The number of candidates after clustering MUST equal the number of entries you write to `instances.json`. If you find 2 distinct Gateways, write 2 entries and announce "I found 2 instances." Never inflate the count.
+
 ### Neutrality rule
 
 Do not infer human semantics from signal values. A profile named `"personal"` is
