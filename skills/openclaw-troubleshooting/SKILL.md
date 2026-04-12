@@ -93,14 +93,37 @@ The user can switch the active target at any point in the conversation with one 
 
 After an override, restate the new target clearly using the same plain-language announcement format above. Then continue troubleshooting against the new target.
 
+## Read-only discipline
+
+**Diagnosis is read-only. Do NOT modify config, disable plugins, restart services, or make any changes to the OpenClaw installation during diagnosis.**
+
+Troubleshooting has two distinct phases:
+
+1. **Diagnose** (read-only) — gather evidence, classify the problem, identify the root cause. Run commands that READ state (`openclaw status`, `openclaw config file`, `openclaw gateway probe`, `openclaw doctor`, log inspection). Do NOT run commands that WRITE state (`openclaw config set`, `openclaw gateway stop/start`, `openclaw plugin disable`, etc.).
+
+2. **Repair** (requires explicit user approval) — propose a specific fix, explain what it will change, and **WAIT for the user to say yes** before executing it.
+
+**Never skip from diagnosis to repair without asking.** Even if the fix seems obvious. Even if the user said "fix my openclaw." A broad troubleshooting prompt is NOT authorization to make config changes.
+
+Example of correct behavior:
+
+> I found that `plugins.entries.slack.enabled` is `true` but the Slack transport is failing with a connection error. One possible fix is to disable the Slack plugin temporarily while we investigate. Want me to run `openclaw config set plugins.entries.slack.enabled false`?
+
+Example of WRONG behavior:
+
+> I found a Slack plugin issue and disabled it. `plugins.entries.slack.enabled` is now `false`.
+
+The second example is wrong because it made a config change without asking. Do not do this.
+
 ## Workflow
 
-0. **Preflight: load the instance registry, auto-trigger discovery if needed, and announce the target.** Then resolve profile and stop any crash loops — see Quick start and the Announce target section. This is non-negotiable. Without a known target, every other step risks operating on the wrong install.
+0. **Preflight: load the instance registry, auto-trigger discovery if needed, and announce the target.** Then resolve profile and stop any crash loops — see Quick start and the STOP — Announce target section. This is non-negotiable. Without a known target, every other step risks operating on the wrong install.
 1. Verify local version and command availability with `openclaw --version`, `openclaw help`, and the specific `openclaw <subcommand> --help` pages you plan to use.
 2. Find the active config path with `openclaw config file`, then inspect local config, env overrides, launchctl or service environment, and current logs before changing anything.
 3. Classify the problem quickly: gateway/runtime, dashboard or Control UI, channels and delivery, auth or pairing, config validation, tools, nodes, or plugin surface.
 4. Prefer local runtime truth when local output conflicts with memory or website docs. If `docs.openclaw.ai` shows a newer command flow, adapt it to the locally installed command surface instead of assuming the docs are wrong or the binary is broken.
-5. Make the smallest reversible fix, rerun the exact failing command, and capture the before and after evidence.
+5. **STOP and present your diagnosis.** Tell the user what you found, what you think the root cause is, and what you recommend as a fix. **Wait for explicit approval before making any changes.** Do not proceed to step 6 without a clear "yes" or equivalent from the user.
+6. Make the smallest reversible fix the user approved, rerun the exact failing command, and capture the before and after evidence.
 
 ## Reference map
 
@@ -122,6 +145,7 @@ Once the issue is confirmed fixed, suggest running `/openclaw-troubleshooting-co
 
 ## Quality rules
 
+- **Never modify config, services, or plugins without explicit user approval.** See "Read-only discipline" above. This is the most important quality rule.
 - Start from live diagnostics and local artifacts, not remembered docs.
 - Keep the top-level skill lean; put detailed troubleshooting branches in the reference files.
 - Cite exact local commands, paths, and log signatures when proposing a fix.

@@ -48,12 +48,14 @@ The result must contain both `local/` and `skills/` directories. Use `$REPO_ROOT
 
 ## When auto-triggered by troubleshooting
 
-When you were called because troubleshooting found no registry (not because the user explicitly invoked `/openclaw-instance-discovery`), the user is waiting for troubleshooting to continue. Minimize friction:
+When you were called because troubleshooting found no registry (not because the user explicitly invoked `/openclaw-instance-discovery`), the user is waiting for troubleshooting to continue. **Speed and minimal friction are the priority.**
 
-- **Single instance found with high confidence?** Save immediately as `default`. Do NOT ask for confirmation. Do NOT pause. Write the registry, announce the target, and return control.
-- **Single instance found with medium confidence?** Ask one yes/no question: "I found one likely OpenClaw on this Mac. Want me to save it as your default troubleshooting target?"
-- **Multiple instances found?** Ask ONLY which should be the default: "I found two OpenClaw instances. Which should I target by default?" Use `default` / `instance-2` labels.
-- **After saving the registry, announce the target and STOP.** Return control to troubleshooting. Do NOT ask follow-up questions. Do NOT offer to rescan. The user wants troubleshooting help, not a discovery conversation.
+- **Single instance found?** Save immediately as `default`. Do NOT ask for confirmation. Do NOT pause. Write the registry, announce the target, and return control.
+- **Multiple instances found?** Pick the most likely default automatically — use the instance on the lower/standard port, or the one with the default profile (`profile: null`), or the first one found if you can't distinguish. Save it as `default`, label the others `instance-2`, etc. **Do NOT pause to ask which one.** Instead, announce your choice and provide the override:
+
+  > I found 2 OpenClaw instances on this Mac. I'm targeting the one on port 18789 as the default. If you want the other one (port 18889), say `use the other one`.
+
+- **After saving the registry, announce the target and STOP.** Return control to troubleshooting immediately. Do NOT ask follow-up questions. Do NOT ask to confirm the labels. Do NOT offer to rescan. The user wants troubleshooting help, not a discovery conversation.
 
 ## Workflow
 
