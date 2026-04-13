@@ -37,11 +37,16 @@ If `config validate` is unavailable locally, fall back to `openclaw help`, the s
 
 ## Safe edits
 
-- Confirm the active file path first.
-- Read the current value before changing it.
-- Prefer one small change at a time.
-- Re-run the exact validation or status command after each edit.
-- Keep the change reversible if the runtime behavior worsens.
+Before proposing or applying a config change, read `playbooks/config-writing.md` and follow it strictly.
+
+Short version:
+- confirm the active file path first
+- propose the exact narrow change first
+- back up before writing
+- prefer one small change at a time
+- run `openclaw config validate` immediately after the change
+- revert immediately if validation fails
+- verify the intended file and value actually changed
 
 ## Schema and get workflow
 

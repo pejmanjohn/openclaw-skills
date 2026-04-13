@@ -144,6 +144,7 @@ Read only the file that matches the observed symptom:
 - `playbooks/validation-scenarios.md` -> scenario prompts with pass or fail expectations for trigger choice, evidence gathering, routing, and verifiable next steps.
 - `playbooks/incident-log.md` -> general post-incident patterns (shipped with repo). Also check `$REPO_ROOT/local/memory/incident-log.md` for environment-specific learnings from past sessions on this machine.
 - `playbooks/docs-navigation.md` -> how to locate the right OpenClaw doc page using docs frontmatter (`summary`, `read_when`, `title`) before browsing or grepping blindly.
+- `playbooks/config-writing.md` -> the discipline for safe config changes: resolve the active config first, propose the exact narrow change, back up before writing, validate immediately, and revert on failure.
 
 ## After resolving an incident
 
@@ -162,5 +163,6 @@ Once the issue is confirmed fixed, suggest running `/openclaw-troubleshooting-co
 
 - Prefer shell inspection of local config, logs, service state, and command help before browsing docs.
 - When you do need docs, first read `playbooks/docs-navigation.md` so you search the local docs corpus deliberately instead of wandering by filename guesswork.
+- Before proposing or applying any config mutation, read `playbooks/config-writing.md` and follow it strictly.
 - Use `docs.openclaw.ai` to understand the latest intended workflow, migration notes, or renamed commands, then verify those steps locally with `openclaw help`.
 - If a documented command is unavailable locally, fall back to the nearest installed help surface and record the mismatch as version drift rather than forcing the website procedure verbatim.
