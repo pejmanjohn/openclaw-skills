@@ -71,6 +71,7 @@ class SkillMetadataTests(unittest.TestCase):
             "auth-and-pairing.md",
             "common-signatures.md",
             "validation-scenarios.md",
+            "docs-navigation.md",
         ]:
             self.assertIn(name, text)
 
@@ -117,6 +118,15 @@ class SkillMetadataTests(unittest.TestCase):
                 "## Scenario: first-time user with no instance registry",
                 "Pass expectations:",
             ],
+            "docs-navigation.md": [
+                "# Docs Navigation",
+                "## Core rule",
+                "summary",
+                "read_when",
+                "title",
+                "## Search strategy",
+                "Docs are for intended behavior. The installed CLI and machine state are still runtime truth.",
+            ],
         }
         for name, phrases in expected.items():
             path = playbooks / name
@@ -138,6 +148,14 @@ class SkillMetadataTests(unittest.TestCase):
         ]:
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, front)
+
+    def test_skill_points_to_docs_navigation_guidance(self) -> None:
+        text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
+        triage = (ROOT / "skills" / "openclaw-troubleshooting" / "playbooks" / "triage.md").read_text()
+        for haystack in [text, triage]:
+            self.assertIn("docs-navigation.md", haystack)
+        self.assertIn("summary", text)
+        self.assertIn("read_when", text)
 
 
 class RepositoryDocumentationTests(unittest.TestCase):
