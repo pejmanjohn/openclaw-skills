@@ -72,6 +72,7 @@ class SkillMetadataTests(unittest.TestCase):
             "common-signatures.md",
             "validation-scenarios.md",
             "docs-navigation.md",
+            "config-writing.md",
         ]:
             self.assertIn(name, text)
 
@@ -127,6 +128,15 @@ class SkillMetadataTests(unittest.TestCase):
                 "## Search strategy",
                 "Docs are for intended behavior. The installed CLI and machine state are still runtime truth.",
             ],
+            "config-writing.md": [
+                "# Config Writing",
+                "## Core rule",
+                "Never batch-write the entire `openclaw.json`.",
+                "## Required sequence",
+                "### 1. Resolve the active target first",
+                "### 6. Validate immediately",
+                "### 7. Revert immediately on validation failure",
+            ],
         }
         for name, phrases in expected.items():
             path = playbooks / name
@@ -156,6 +166,13 @@ class SkillMetadataTests(unittest.TestCase):
             self.assertIn("docs-navigation.md", haystack)
         self.assertIn("summary", text)
         self.assertIn("read_when", text)
+
+    def test_skill_points_to_config_writing_guidance(self) -> None:
+        text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
+        config_playbook = (ROOT / "skills" / "openclaw-troubleshooting" / "playbooks" / "config.md").read_text()
+        for haystack in [text, config_playbook]:
+            self.assertIn("config-writing.md", haystack)
+        self.assertIn("Never batch-write the entire `openclaw.json`.", (ROOT / "skills" / "openclaw-troubleshooting" / "playbooks" / "config-writing.md").read_text())
 
 
 class RepositoryDocumentationTests(unittest.TestCase):
