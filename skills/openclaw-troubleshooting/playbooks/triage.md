@@ -112,3 +112,15 @@ Also check the process environment used by the actual service manager, not just 
 ## Drift rule
 
 If `docs.openclaw.ai` documents a command or flag that the local binary does not have, prefer `openclaw help` and the installed subcommand help output. Treat the docs as guidance for the latest release, not proof of what is installed.
+
+## When to open the docs
+
+Open the docs when local CLI output tells you **what** is broken but not **how the product is intended to behave**.
+
+Common examples:
+- you need the intended meaning of a Gateway warning or behavior
+- you need the canonical platform/service-manager model for macOS, Linux, or Windows
+- you need to find the right conceptual page for pairing, discovery, Control UI, or remote access
+- you suspect a command or workflow was renamed and want the latest intended path
+
+When that happens, use `playbooks/docs-navigation.md` first. It gives you a fast way to locate the right OpenClaw doc page by frontmatter (`summary`, `read_when`, `title`) instead of wandering by filename guesswork.
