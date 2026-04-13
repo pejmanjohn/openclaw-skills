@@ -42,6 +42,7 @@ The result must contain both `local/` and `skills/` directories. Use `$REPO_ROOT
 - **If crash-looping:** Stop the service immediately before diagnosing. Crash loops accumulate auth lockout.
 - **Check past incidents:** Read `playbooks/incident-log.md` (shipped patterns) AND `$REPO_ROOT/local/memory/incident-log.md` (if it exists — environment-specific learnings) before starting fresh diagnosis.
 - Confirm the installed build and local command surface: `openclaw --version`, `openclaw help`, `openclaw <subcommand> --help`.
+- **When docs are needed:** Use `playbooks/docs-navigation.md` to find the right OpenClaw doc page quickly. The docs contain frontmatter like `summary` and `read_when` that help you locate the right page semantically instead of browsing randomly.
 - Locate the active config before diagnosing behavior: `openclaw config file`.
 - Run the fast ladder in order and stop when the failure class is obvious:
   `openclaw status`
@@ -142,6 +143,7 @@ Read only the file that matches the observed symptom:
 - `playbooks/common-signatures.md` -> terse log or error signature to next action lookup. Also check `$REPO_ROOT/local/memory/common-signatures.md` if it exists.
 - `playbooks/validation-scenarios.md` -> scenario prompts with pass or fail expectations for trigger choice, evidence gathering, routing, and verifiable next steps.
 - `playbooks/incident-log.md` -> general post-incident patterns (shipped with repo). Also check `$REPO_ROOT/local/memory/incident-log.md` for environment-specific learnings from past sessions on this machine.
+- `playbooks/docs-navigation.md` -> how to locate the right OpenClaw doc page using docs frontmatter (`summary`, `read_when`, `title`) before browsing or grepping blindly.
 
 ## After resolving an incident
 
@@ -159,5 +161,6 @@ Once the issue is confirmed fixed, suggest running `/openclaw-troubleshooting-co
 ## Tooling/fallback notes
 
 - Prefer shell inspection of local config, logs, service state, and command help before browsing docs.
+- When you do need docs, first read `playbooks/docs-navigation.md` so you search the local docs corpus deliberately instead of wandering by filename guesswork.
 - Use `docs.openclaw.ai` to understand the latest intended workflow, migration notes, or renamed commands, then verify those steps locally with `openclaw help`.
 - If a documented command is unavailable locally, fall back to the nearest installed help surface and record the mismatch as version drift rather than forcing the website procedure verbatim.
