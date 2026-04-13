@@ -1,3 +1,4 @@
+import json
 import os
 import pathlib
 import subprocess
@@ -13,9 +14,14 @@ class RepositoryShapeTests(unittest.TestCase):
         expected = [
             ROOT / "scripts",
             ROOT / "skills" / "openclaw-troubleshooting",
-            ROOT / "skills" / "openclaw-troubleshooting" / "references",
+            ROOT / "skills" / "openclaw-troubleshooting" / "playbooks",
             ROOT / "skills" / "openclaw-troubleshooting" / "scripts",
             ROOT / "skills" / "openclaw-troubleshooting" / "agents",
+            ROOT / "skills" / "openclaw-instance-discovery",
+            ROOT / "skills" / "openclaw-instance-discovery" / "playbooks",
+            ROOT / "local",
+            ROOT / "local" / "memory",
+            ROOT / "local" / "state",
         ]
         for path in expected:
             with self.subTest(path=path.relative_to(ROOT)):
@@ -69,9 +75,17 @@ class SkillMetadataTests(unittest.TestCase):
             self.assertIn(name, text)
 
     def test_reference_files_exist_and_include_core_invariants(self) -> None:
-        references = ROOT / "skills" / "openclaw-troubleshooting" / "references"
+        playbooks = ROOT / "skills" / "openclaw-troubleshooting" / "playbooks"
         expected = {
-            "triage.md": ["# Triage", "## Contents", "## First 60 seconds", "openclaw status --all"],
+            "triage.md": [
+                "# Triage",
+                "## Contents",
+                "## First 60 seconds",
+                "openclaw [--profile X] status --all",
+                "instances.json",
+                "verify",
+                "Option B",
+            ],
             "gateway.md": ["# Gateway", "## Contents", "## Core checks", "openclaw gateway probe"],
             "config.md": ["# Config", "## Contents", "## Active config path", "openclaw config file"],
             "channels.md": ["# Channels", "## Contents", "## Core checks", "openclaw channels status --probe"],
@@ -100,16 +114,30 @@ class SkillMetadataTests(unittest.TestCase):
                 "## Scenario: exec suddenly asks for approval",
                 "## Scenario: safe config change and validation",
                 "## Scenario: plugin install missing openclaw.extensions",
+                "## Scenario: first-time user with no instance registry",
                 "Pass expectations:",
             ],
         }
         for name, phrases in expected.items():
-            path = references / name
-            with self.subTest(reference=name):
-                self.assertTrue(path.is_file(), f"missing reference {name}")
+            path = playbooks / name
+            with self.subTest(playbook=name):
+                self.assertTrue(path.is_file(), f"missing playbook {name}")
                 text = path.read_text()
                 for phrase in phrases:
                     self.assertIn(phrase, text)
+
+    def test_skill_description_includes_natural_language_phrasings(self) -> None:
+        text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
+        front = text.split("---")[1] if text.startswith("---") else text.split("---")[0]
+        for phrase in [
+            "isn't working",
+            "isn't responding",
+            "not replying",
+            "won't load",
+            "won't start",
+        ]:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, front)
 
 
 class RepositoryDocumentationTests(unittest.TestCase):
@@ -117,6 +145,8 @@ class RepositoryDocumentationTests(unittest.TestCase):
         text = (ROOT / "README.md").read_text()
         for phrase in [
             "openclaw-troubleshooting",
+            "openclaw-instance-discovery",
+            "openclaw-troubleshooting-compound",
             "local binary/help/config/state/logs",
             "docs.openclaw.ai",
             "latest release",
@@ -136,8 +166,15 @@ class RepositoryDocumentationTests(unittest.TestCase):
             "install-claude-skill.sh",
             ".claude/skills/openclaw-troubleshooting/SKILL.md",
             "Future expansion",
+            "## Instance Discovery",
+            "## Shared Local Memory",
+            "local/memory/",
+            "local/state/",
+            "instances.json",
+            "auto-trigger",
         ]:
-            self.assertIn(phrase, text)
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, text)
 
     def test_license_is_mit(self) -> None:
         text = (ROOT / "LICENSE").read_text()
@@ -357,3 +394,271 @@ class DiagnosticsScriptTests(unittest.TestCase):
             )
         self.assertEqual(result.returncode, 2)
         self.assertIn("Invalid value for --follow-seconds", result.stderr)
+
+
+class TopLevelLocalLayoutTests(unittest.TestCase):
+    def test_local_directory_exists_at_repo_root(self) -> None:
+        self.assertTrue((ROOT / "local").is_dir(), "missing top-level local/")
+        self.assertTrue((ROOT / "local" / "memory").is_dir(), "missing local/memory/")
+        self.assertTrue((ROOT / "local" / "state").is_dir(), "missing local/state/")
+
+    def test_local_subdirectories_have_gitkeep_files(self) -> None:
+        self.assertTrue((ROOT / "local" / "memory" / ".gitkeep").is_file())
+        self.assertTrue((ROOT / "local" / "state" / ".gitkeep").is_file())
+
+    def test_local_state_files_are_gitignored(self) -> None:
+        result = subprocess.run(
+            ["git", "check-ignore", "-q", "local/state/instances.json"],
+            cwd=ROOT, capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, "local/state/instances.json should be gitignored")
+
+    def test_local_memory_files_are_gitignored(self) -> None:
+        result = subprocess.run(
+            ["git", "check-ignore", "-q", "local/memory/incident-log.md"],
+            cwd=ROOT, capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, "local/memory/incident-log.md should be gitignored")
+
+    def test_gitkeep_files_are_not_ignored(self) -> None:
+        for keeper in ("local/memory/.gitkeep", "local/state/.gitkeep"):
+            with self.subTest(path=keeper):
+                result = subprocess.run(
+                    ["git", "check-ignore", "-q", keeper],
+                    cwd=ROOT, capture_output=True,
+                )
+                self.assertEqual(result.returncode, 1, f"{keeper} should NOT be gitignored")
+
+    def test_per_skill_references_local_no_longer_exists(self) -> None:
+        legacy = ROOT / "skills" / "openclaw-troubleshooting" / "playbooks" / "local"
+        self.assertFalse(legacy.exists(), "playbooks/local/ should be gone after the hoist")
+
+
+class InstanceDiscoverySkillMetadataTests(unittest.TestCase):
+    SKILL_PATH = ROOT / "skills" / "openclaw-instance-discovery" / "SKILL.md"
+
+    def test_skill_file_exists(self) -> None:
+        self.assertTrue(self.SKILL_PATH.is_file(), "missing skills/openclaw-instance-discovery/SKILL.md")
+
+    def test_skill_frontmatter_is_valid(self) -> None:
+        text = self.SKILL_PATH.read_text()
+        self.assertIn("name: openclaw-instance-discovery", text)
+        self.assertIn("description: Use when", text)
+
+    def test_skill_description_includes_natural_language_triggers(self) -> None:
+        text = self.SKILL_PATH.read_text()
+        for needle in ["find", "openclaw", "rescan", "discover", "instance"]:
+            with self.subTest(needle=needle):
+                self.assertIn(needle, text.lower())
+
+    def test_skill_description_mentions_auto_trigger(self) -> None:
+        text = self.SKILL_PATH.read_text()
+        self.assertIn("auto-triggered", text.lower())
+
+    def test_skill_includes_required_top_level_sections(self) -> None:
+        text = self.SKILL_PATH.read_text()
+        for heading in ["## Quick start", "## Workflow", "## Reference map", "## Quality rules"]:
+            with self.subTest(heading=heading):
+                self.assertIn(heading, text)
+
+    def test_reference_map_mentions_each_playbook_file(self) -> None:
+        text = self.SKILL_PATH.read_text()
+        for name in ["discovery-sequence.md", "fallback-ladder.md", "registry-contract.md"]:
+            with self.subTest(name=name):
+                self.assertIn(name, text)
+
+    def test_skill_grounds_in_openclaw_docs(self) -> None:
+        text = self.SKILL_PATH.read_text()
+        self.assertIn("docs.openclaw.ai", text)
+
+
+class DiscoverySequencePlaybookTests(unittest.TestCase):
+    PLAYBOOK_PATH = (
+        ROOT / "skills" / "openclaw-instance-discovery"
+        / "playbooks" / "discovery-sequence.md"
+    )
+
+    def test_playbook_exists(self) -> None:
+        self.assertTrue(self.PLAYBOOK_PATH.is_file())
+
+    def test_playbook_has_six_phases(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        for phase in [
+            "## Phase 1",
+            "## Phase 2",
+            "## Phase 3",
+            "## Phase 4",
+            "## Phase 5",
+            "## Phase 6",
+        ]:
+            with self.subTest(phase=phase):
+                self.assertIn(phase, text)
+
+    def test_phase_1_uses_native_openclaw_commands(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        for command in [
+            "openclaw --version",
+            "openclaw gateway status --deep --json",
+            "openclaw gateway probe --json",
+            "openclaw config file",
+        ]:
+            with self.subTest(command=command):
+                self.assertIn(command, text)
+
+    def test_phase_2_inspects_launchd_layout(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        for needle in [
+            "launchctl list",
+            "ai.openclaw",
+            "OPENCLAW_PROFILE",
+            "OPENCLAW_CONFIG_PATH",
+            "OPENCLAW_STATE_DIR",
+            "OPENCLAW_GATEWAY_PORT",
+        ]:
+            with self.subTest(needle=needle):
+                self.assertIn(needle, text)
+
+    def test_phase_4_documents_url_token_fallback(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        self.assertIn("--url ws://127.0.0.1", text)
+        self.assertIn("--token", text)
+        self.assertIn("--profile", text)
+
+    def test_phase_6_handles_single_and_multi_instance_cases(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        self.assertIn("Single-instance", text)
+        self.assertIn("Multi-instance", text)
+        self.assertIn("default", text)
+        self.assertIn("instance-2", text)
+
+    def test_playbook_grounds_in_openclaw_docs(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        self.assertIn("docs.openclaw.ai", text)
+
+
+class FallbackLadderPlaybookTests(unittest.TestCase):
+    PLAYBOOK_PATH = (
+        ROOT / "skills" / "openclaw-instance-discovery"
+        / "playbooks" / "fallback-ladder.md"
+    )
+
+    def test_playbook_exists(self) -> None:
+        self.assertTrue(self.PLAYBOOK_PATH.is_file())
+
+    def test_ladder_checks_common_install_paths(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        for path in [
+            "/usr/local/bin/openclaw",
+            "/opt/homebrew/bin/openclaw",
+            "/Applications/OpenClaw.app",
+        ]:
+            with self.subTest(path=path):
+                self.assertIn(path, text)
+
+    def test_ladder_checks_common_config_locations(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        for path in [
+            "~/.openclaw/openclaw.json",
+            "~/Library/Application Support/OpenClaw",
+        ]:
+            with self.subTest(path=path):
+                self.assertIn(path, text)
+
+    def test_ladder_includes_last_resort_user_question(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        self.assertIn("last resort", text.lower())
+        self.assertIn("never dead-end", text.lower())
+
+    def test_ladder_mentions_walking_the_steps_in_order(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        for step in ["Step 1", "Step 2", "Step 3", "Step 4", "Step 5", "Step 6"]:
+            with self.subTest(step=step):
+                self.assertIn(step, text)
+
+
+class RegistryContractPlaybookTests(unittest.TestCase):
+    PLAYBOOK_PATH = (
+        ROOT / "skills" / "openclaw-instance-discovery"
+        / "playbooks" / "registry-contract.md"
+    )
+
+    def test_playbook_exists(self) -> None:
+        self.assertTrue(self.PLAYBOOK_PATH.is_file())
+
+    def _extract_first_json_block(self) -> dict:
+        text = self.PLAYBOOK_PATH.read_text()
+        marker = "```json"
+        start = text.index(marker) + len(marker)
+        end = text.index("```", start)
+        return json.loads(text[start:end])
+
+    def test_example_registry_parses_as_json(self) -> None:
+        sample = self._extract_first_json_block()
+        self.assertIsInstance(sample, dict)
+
+    def test_example_registry_has_required_top_level_fields(self) -> None:
+        sample = self._extract_first_json_block()
+        for field in ("version", "updatedAt", "defaultInstanceId", "instances"):
+            with self.subTest(field=field):
+                self.assertIn(field, sample)
+
+    def test_example_registry_version_is_one(self) -> None:
+        sample = self._extract_first_json_block()
+        self.assertEqual(sample["version"], 1)
+
+    def test_example_registry_default_instance_resolves(self) -> None:
+        sample = self._extract_first_json_block()
+        ids = [inst["id"] for inst in sample["instances"]]
+        self.assertIn(sample["defaultInstanceId"], ids)
+
+    def test_each_instance_has_required_fields(self) -> None:
+        sample = self._extract_first_json_block()
+        for inst in sample["instances"]:
+            with self.subTest(instance_id=inst.get("id")):
+                self.assertIn("id", inst)
+                self.assertIn("label", inst)
+
+    def test_each_instance_includes_discoveredFrom(self) -> None:
+        sample = self._extract_first_json_block()
+        for inst in sample["instances"]:
+            with self.subTest(instance_id=inst.get("id")):
+                self.assertIn("discoveredFrom", inst)
+                self.assertIsInstance(inst["discoveredFrom"], str)
+                self.assertTrue(len(inst["discoveredFrom"]) > 0)
+
+    def test_playbook_documents_field_guidance(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        for field in [
+            "id", "label", "kind", "profile", "port",
+            "configPath", "stateDir", "serviceLabel", "discoveredFrom",
+        ]:
+            with self.subTest(field=field):
+                self.assertIn(field, text)
+
+    def test_playbook_documents_ownership(self) -> None:
+        text = self.PLAYBOOK_PATH.read_text()
+        self.assertIn("Ownership", text)
+        self.assertIn("writes", text.lower())
+        self.assertIn("reads", text.lower())
+
+
+class TroubleshootingRegistryIntegrationTests(unittest.TestCase):
+    def test_skill_documents_registry_preflight(self) -> None:
+        text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
+        self.assertIn("local/state/instances.json", text)
+        self.assertIn("preflight", text.lower())
+
+    def test_skill_documents_auto_trigger_to_discovery(self) -> None:
+        text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
+        self.assertIn("openclaw-instance-discovery", text)
+        self.assertIn("auto-trigger", text.lower())
+        self.assertIn("missing", text.lower())
+
+    def test_skill_documents_announce_target_step(self) -> None:
+        text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
+        self.assertIn("announce", text.lower())
+        self.assertIn("plain language", text.lower())
+
+    def test_skill_documents_override_grammar(self) -> None:
+        text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
+        self.assertIn("use the other one", text.lower())

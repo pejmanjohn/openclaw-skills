@@ -1,4 +1,9 @@
 .worktrees/
 docs/superpowers/
-skills/*/references/local/*
-!skills/*/references/local/.gitkeep
+local/**
+!local/
+!local/memory/
+!local/state/
+!local/memory/.gitkeep
+!local/state/.gitkeep
+__pycache__/

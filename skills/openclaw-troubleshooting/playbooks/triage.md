@@ -12,24 +12,42 @@ Use this page for the first minute of diagnosis and to decide which deeper runbo
 
 ## First 60 seconds
 
-### Step 0: Resolve active profile (MANDATORY)
+### Step 0: Verify the saved instance still matches reality (Option B)
 
-Before ANY `openclaw` command, determine which profile the gateway actually runs under. A bare `openclaw` targets the default profile, which may be different from the service profile.
+The preflight step in `SKILL.md` has already loaded `$REPO_ROOT/local/state/instances.json` and announced the chosen target. Step 0's job is to **verify** that the saved instance still matches reality before running deeper diagnostics. We do not re-derive from scratch on every run — that's discovery's job, and discovery already ran (either now via auto-trigger or in a prior session).
+
+This is Option B from the workstream plan: the registry provides the target context, and Step 0 evolves from "derive" to "verify." Live verification still matters; we're just not duplicating discovery's work.
+
+#### What to verify
+
+For the saved default instance from the registry, confirm these still hold:
 
 ```bash
-# What does the CLI think?
-openclaw config file
+# 1. The configured port still matches what's listening
+openclaw [--profile X] config get gateway.port
+# Compare to instances.json defaultInstance.port
 
-# What does the launchd service actually use? (macOS)
-launchctl list | grep openclaw
-# Inspect the plist for profile and state-dir overrides:
-grep -A1 "OPENCLAW_PROFILE\|OPENCLAW_STATE_DIR\|OPENCLAW_CONFIG_PATH" ~/Library/LaunchAgents/ai.openclaw.*.plist
+# 2. The active config file still matches
+openclaw [--profile X] config file
+# Compare to instances.json defaultInstance.configPath
 
-# On Linux, check the systemd unit environment instead:
-# systemctl --user show openclaw-gateway | grep -i "environment\|openclaw"
+# 3. The service is still registered (macOS)
+launchctl list | grep <serviceLabel from instances.json>
 ```
 
-If the service uses a different profile or state directory than the CLI default, ALL subsequent commands in this triage need the matching `--profile <name>` flag.
+If all three checks pass, the saved instance is live and Step 0 is done. Proceed to Step 0.5.
+
+#### What to do if verification fails
+
+If any check fails, the saved registry is stale relative to the current machine. **Do not silently rescan.** Tell the user clearly what mismatches you found and suggest re-running `/openclaw-instance-discovery` to refresh:
+
+> Your saved OpenClaw target says it runs on port 18789 with config `~/.openclaw/openclaw.json`, but I'm seeing the gateway on port 18889 with a different config. Want me to rescan to refresh the saved instance map?
+
+Stale-registry auto-refresh is deferred to a later PR. For now, the user explicitly chooses whether to rescan.
+
+#### Notes on bare `openclaw` commands
+
+A bare `openclaw` targets the default profile, which may differ from the saved instance's profile. Always use the `--profile <name>` flag from the saved instance's `profile` field on every command, where `<name>` comes from the registry. If the registry shows `profile: null`, run bare commands.
 
 ### Step 0.5: Stop crash loops immediately
 
