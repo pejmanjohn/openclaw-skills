@@ -55,18 +55,18 @@ For rollbacks, partial-rollbacks, or aborts, add a detailed block below the tabl
 ```markdown
 ---
 
-## 20260420-143022 — rolled back (BlueBubbles plugin init failure)
+## 20260115-143022 — rolled back (example plugin init failure)
 
-**Symptoms:** BlueBubbles plugin init went from ok (baseline) to failed (post). Error: `Cannot find module '/path/to/.../bluebubbles'`.
+**Symptoms:** `<plugin-name>` plugin init went from ok (baseline) to failed (post). Error: `Cannot find module '/path/to/.../<plugin-name>'`.
 
-**Root cause suspicion:** Module path resolution changed in 2026.4.15 — the plugin still points to the pre-update install root.
+**Root cause suspicion:** Module path resolution changed in the target version — the plugin still points to the pre-update install root.
 
 **Rollback steps run:**
-1. `openclaw update --tag 2026.4.5 --no-restart --yes` — succeeded
-2. User restarted gateway — succeeded
+1. `openclaw update --tag <previous-version> --no-restart --yes` — succeeded
+2. Gateway restarted (three-step stop/enable/bootstrap) — succeeded
 3. Re-ran gates against baseline — all pass
 
-**Outcome:** Restored to 2026.4.5. Logged as incident in local/memory/incident-log.md via openclaw-troubleshooting-compound.
+**Outcome:** Restored to `<previous-version>`. Logged as incident via `/openclaw-troubleshooting-compound`.
 
 **Followup:** Wait for upstream fix or re-test on next release.
 ```
@@ -77,7 +77,7 @@ Extended entries explain what's non-obvious from the table row. Don't write them
 
 When the skill runs next time, Phase 1 reads the last 3-5 entries from the ledger before proposing an update. Surface anything notable in the release summary:
 
-> Note from upgrade history: the last update (2026-04-07, 2026.3.13 → 2026.4.5) flagged a BlueBubbles plugin init warning that was accepted. Worth checking whether this update fixes or worsens it.
+> Note from upgrade history: the last update flagged a plugin init warning that was accepted. Worth checking whether this update fixes or worsens it.
 
 This turns the ledger into accumulating context that makes each run smarter without requiring the user to remember past issues.
 

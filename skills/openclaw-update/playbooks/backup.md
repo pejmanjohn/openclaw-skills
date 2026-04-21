@@ -29,7 +29,7 @@ $REPO_ROOT/local/backups/<runId>/
 openclaw backup create --verify --no-include-workspace --output "$BACKUP_DIR" --json
 ```
 
-`--no-include-workspace` is the right default for update-triggered backups. The workspace is unchanged by a CLI update, so including it bloats the archive dramatically (observed: 1.5 GB on a real run, mostly the user's iCloud workspace tree) without providing any rollback value. If the user explicitly asks to include workspace files — e.g. they're combining an update with a workspace migration — drop the flag. Otherwise keep it.
+`--no-include-workspace` is the right default for update-triggered backups. The workspace is unchanged by a CLI update, so including it can bloat the archive by gigabytes — especially when the workspace lives on a cloud-synced drive or contains large attachments — without providing any rollback value. If the user explicitly asks to include workspace files — e.g. they're combining an update with a workspace migration — drop the flag. Otherwise keep it.
 
 `--verify` writes and then immediately validates the archive in one step.
 

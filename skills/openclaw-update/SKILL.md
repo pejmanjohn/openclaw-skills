@@ -162,7 +162,7 @@ See `playbooks/cli-update.md` for install-kind notes (pnpm/npm/brew/git-checkout
 
 The new CLI is on disk but the running gateway process is still on the old binary. It needs to be restarted for the update to take effect.
 
-**Correct three-step sequence** (observed to fail without the `enable` step on real runs):
+**Three-step sequence** (the `enable` step is mandatory — `bootstrap` will fail without it after a `gateway stop`):
 
 ```bash
 openclaw gateway stop
@@ -172,7 +172,7 @@ launchctl bootstrap gui/$(id -u) <plistPath>
 
 `<serviceLabel>` and `<plistPath>` come from the instance registry (`serviceLabel` field, plus `<plistPath>` derived from `~/Library/LaunchAgents/<serviceLabel>.plist` on macOS). For the default case these are `ai.openclaw.gateway` and `~/Library/LaunchAgents/ai.openclaw.gateway.plist`.
 
-**Why the `enable` step is mandatory:** `openclaw gateway stop` performs a `launchctl bootout`, which — observed empirically — can also leave the service in launchctl's **disabled** list. A subsequent `launchctl bootstrap` against a disabled service fails with a cryptic `"Bootstrap failed: 5: Input/output error"` and no further explanation. Running `launchctl enable` first re-enables the service and lets bootstrap succeed.
+**Why the `enable` step is mandatory:** `openclaw gateway stop` performs a `launchctl bootout`, which on macOS can leave the service in launchctl's **disabled** list. A subsequent `launchctl bootstrap` against a disabled service fails with a cryptic `"Bootstrap failed: 5: Input/output error"` and no further explanation. Running `launchctl enable` first re-enables the service and lets bootstrap succeed.
 
 **Who runs the three commands:**
 
@@ -181,7 +181,7 @@ launchctl bootstrap gui/$(id -u) <plistPath>
 
 After the three commands complete, wait ~10 seconds for the gateway to come up and for channel providers to finish initializing. The first `openclaw gateway probe` may report a transient `Connect: failed - gateway closed (1006)` if run too soon; give it another 5-10 seconds before concluding the restart failed.
 
-**Stale-lock recovery** — if `launchctl bootstrap` fails even after `enable`, check for stale lock files. This is the scenario documented in the gateway-recovery memory:
+**Stale-lock recovery** — if `launchctl bootstrap` fails even after `enable`, check for stale lock files under `$TMPDIR/openclaw-$(id -u)/`:
 
 ```bash
 rm -f "$TMPDIR/openclaw-$(id -u)/gateway."*.lock
