@@ -1,126 +1,75 @@
-# 🦞 openclaw-skills
+# 🦞 openclaw-admin-skills
 
-This repository is the canonical source for OpenClaw skills. It ships three skills that work together: `openclaw-instance-discovery` for finding OpenClaw installs on your machine and saving a registry, `openclaw-troubleshooting` for diagnosing and repairing a broken OpenClaw install, and `openclaw-troubleshooting-compound` for capturing learnings after each incident so the troubleshooting skill gets smarter over time.
+Natural-language skills for running OpenClaw. Tell your AI harness to "update openclaw" or "fix my openclaw" in plain English, and get a safe, reviewable workflow — preflight checks, evidence-based diagnosis, explicit approval before any change, and per-user memory that makes every next run smarter.
 
-A non-technical user can fire up Claude Code in any directory on their Mac, say something like "openclaw is broken", and these skills will figure out which OpenClaw to target and how to help — without the user knowing where OpenClaw is installed.
+## What's included
 
-## Current Scope
+| Skill | Triggers on | What it does |
+|---|---|---|
+| **openclaw-update** | `"update openclaw"`, `"is there a new openclaw"`, `"time to upgrade"` | End-to-end update. Captures a baseline inventory, checks release notes for breaking changes, backs up, runs `openclaw update`, verifies every channel/cron/plugin still healthy after, and finishes with a **personalized highlights briefing** filtered against the features you actually use. |
+| **openclaw-troubleshooting** | `"openclaw isn't working"`, `"not replying"`, `"won't start"`, `"fix my openclaw"` | Evidence-based diagnosis. Reads live CLI output, config, and logs before touching anything. Explicit approval required before any repair — diagnosis and repair are separate phases. |
+| **openclaw-instance-discovery** | `"find my openclaw"`, `"rescan"` | Builds a registry of OpenClaw installs on this machine. Auto-triggered by troubleshooting on first run; you rarely invoke it directly. |
+| **openclaw-troubleshooting-compound** | After an incident resolves | Drafts a tight incident-log entry + error signatures and writes them to your per-user local memory. Next session reads them back as context. |
 
-This repo focuses on local, evidence-based troubleshooting for:
+Non-technical users can fire up Claude Code in any directory, say "openclaw is broken", and these skills figure out which OpenClaw to target and what to do — without the user needing to know where OpenClaw is installed.
 
-- install and setup issues
-- gateway and runtime issues
-- dashboard and control UI connectivity
-- channel delivery problems
-- auth, token, and pairing drift
-- tools, nodes, permissions, and approvals
-- config validation and safe config changes
-- plugin-related failures where relevant
+## Quick start (Claude Code)
 
-The first skill is troubleshooting-focused because that is the fastest way to make the repo useful on day one. When OpenClaw is running on the same machine as the agent, local binary/help/config/state/logs are more trustworthy than assumptions or the latest docs alone.
-
-## Compounding Knowledge
-
-Most troubleshooting skills are static: they ship a fixed set of instructions and never learn from the incidents they help resolve. This repo is designed to get smarter over time — for **each user individually**.
-
-The cycle works like this:
-
-**Diagnose → Fix → Compound → Repeat**
-
-After resolving an incident, the troubleshooting skill suggests running `/openclaw-troubleshooting-compound`. That companion skill reviews what just happened in the conversation — symptoms, dead ends, root cause, fix — and drafts a structured entry for your **local** incident log (`local/memory/incident-log.md`) and any new error signatures (`local/memory/common-signatures.md`). You review the draft, confirm, and the learnings are written. No manual writing required. The `local/` directory is gitignored, so your entries never conflict with upstream updates.
-
-The next time the troubleshooting skill triggers, it reads the incident log before starting diagnosis, so it arrives with the full history of **your** past incidents instead of starting from zero.
-
-### Why local, not upstream?
-
-The most useful troubleshooting knowledge is specific: your exact ports, profile names, config paths, service labels, the commands that worked on your machine. Generic patterns are already in the skill's reference files. The incident log is where your environment's quirks accumulate — the things no upstream documentation could anticipate.
-
-The repo ships two layers of knowledge:
-
-| Layer | Location | Tracked by git | Contains |
-|---|---|---|---|
-| **Shipped** | `skills/openclaw-troubleshooting/playbooks/incident-log.md`, `skills/openclaw-troubleshooting/playbooks/common-signatures.md` | Yes | General patterns, seed entries |
-| **Local** | `local/memory/incident-log.md`, `local/memory/common-signatures.md` | No (gitignored) | Your environment-specific entries |
-
-The troubleshooting skill reads both layers. `git pull` updates the shipped patterns without touching your local learnings.
-
-This means:
-- The first time you hit a problem, you work through it. The second time, the skill already has your exact fix — paths, ports, and all.
-- Error signatures that required investigation once become instant lookups with your specific next-action steps.
-- Upstream improvements arrive via `git pull` without merge conflicts.
-
-### How it works
-
-```
-┌─────────────────────────┐     ┌──────────────────────────────┐
-│ openclaw-troubleshooting │     │ openclaw-troubleshooting-     │
-│                         │     │ compound                      │
-│  1. Read incident log   │     │                              │
-│  2. Diagnose & fix      │────▶│  1. Review conversation      │
-│  3. Suggest /compound   │     │  2. Draft incident-log entry │
-│                         │     │  3. Draft new signatures     │
-└─────────────────────────┘     │  4. Check for duplicates     │
-                                │  5. Present for confirmation │
-                                │  6. Write to local install   │
-                                └──────────────────────────────┘
+```bash
+mkdir -p ~/src
+git clone https://github.com/pejmanjohn/openclaw-skills.git ~/src/openclaw-skills
+~/src/openclaw-skills/scripts/install-claude-skill.sh
 ```
 
-### Contributing upstream
+Then in any Claude Code session, just talk:
 
-If you resolve an incident that reveals a **general pattern** other users would benefit from, you can contribute it back. Generalize the entry (replace machine-specific details with placeholders) and open a PR to `skills/openclaw-troubleshooting/playbooks/incident-log.md` or `skills/openclaw-troubleshooting/playbooks/common-signatures.md`.
+```
+> update openclaw
+> openclaw isn't responding
+> find my openclaw
+```
 
-## Instance Discovery
+Update the skill itself later with:
 
-The first time you ask the troubleshooting skill for help, it auto-triggers `openclaw-instance-discovery` to figure out which OpenClaw is installed on your Mac. Discovery looks at the documented launchd layout, runs native `openclaw` commands, and clusters the evidence into one or more candidate instances. It then writes a small registry at `local/state/instances.json` and picks a default target.
+```bash
+git -C ~/src/openclaw-skills pull
+~/src/openclaw-skills/scripts/install-claude-skill.sh
+```
 
-You don't need to invoke discovery manually for this to work — it's automatic on first run. You only need to run `/openclaw-instance-discovery` deliberately if you've added or removed an OpenClaw install and want to refresh the registry.
+## Install
 
-The registry stays small and hand-readable. It records the port, config path, state directory, service label, and a short `discoveredFrom` string for each instance — so when the troubleshooting skill announces "I'm targeting the OpenClaw I found at port 18789," it can show you exactly what evidence it used to make that choice.
+Keep one canonical source checkout and install into whichever agents you use. The repo ships three install scripts that symlink back to the canonical checkout — so `git pull` picks up updates everywhere.
 
-Discovery is designed for the single-instance common case (auto-save, no questions asked) and gracefully handles multi-instance setups without front-loading naming. If discovery can't find OpenClaw at all, it walks through documented common install locations before asking you one tractable question — it never dead-ends.
+One-time clone, shared by all three flows below:
 
-## Shared Local Memory
+```bash
+mkdir -p ~/src
+git clone https://github.com/pejmanjohn/openclaw-skills.git ~/src/openclaw-skills
+```
 
-All three skills share a single local memory directory at the repo root: `local/`. Inside it, `local/memory/` holds learned reference material (your incident log, your error signatures) and `local/state/` holds structured machine state (the instance registry).
+### Claude Code: Install
 
-Because `local/` lives at the repo root rather than inside any individual skill, **multiple installs share one memory automatically**. If you have Claude Code, Codex, and OpenClaw itself all symlinked to the same source checkout at `~/src/openclaw-skills`, they all read and write the same `local/memory/incident-log.md` and the same `local/state/instances.json`. One brain across all three agents.
+```bash
+~/src/openclaw-skills/scripts/install-claude-skill.sh
+```
 
-The entire `local/` directory is gitignored (`local/**` with `.gitkeep` exceptions), so your machine-specific entries never conflict with `git pull` and never get pushed upstream.
+Symlinks into `~/.claude/skills/`. The canonical entrypoint on disk is `~/.claude/skills/openclaw-troubleshooting/SKILL.md` (a symlink to the repo).
 
-## Local First, Version Aware
+For project-local install instead of personal:
 
-Use the installed OpenClaw binary as runtime truth:
+```bash
+~/src/openclaw-skills/scripts/install-claude-skill.sh --dest "/path/to/project/.claude/skills"
+```
 
-- `openclaw --version`
-- `openclaw help` and `openclaw <subcommand> --help`
-- `openclaw config file`
-- `openclaw status`, `openclaw gateway probe`, `openclaw doctor`, and logs
+### Codex: Install
 
-Treat [docs.openclaw.ai](https://docs.openclaw.ai/) as procedural truth for the latest release, not as proof that the local install has the same commands, flags, or config keys. If the docs and the local binary disagree, trust the local install and treat the difference as version drift.
+```bash
+~/src/openclaw-skills/scripts/install-codex-skill.sh
+```
 
-## Canonical Layout
+Symlinks into `$CODEX_HOME/skills` or `~/.codex/skills`. After install, restart Codex so it reloads.
 
-The source of truth lives in one place:
-
-- `skills/openclaw-troubleshooting/SKILL.md` — entrypoint and routing logic
-- `skills/openclaw-troubleshooting/playbooks/` — deep playbook files per symptom class
-  - `incident-log.md` — shipped post-incident patterns
-  - `common-signatures.md` — shipped error string → next action lookup table
-  - `validation-scenarios.md` — behavioral test scenarios for the skill
-  - `triage.md`, `gateway.md`, `config.md`, `channels.md`, `auth-and-pairing.md`, `tools-and-nodes.md` — domain runbooks
-- `skills/openclaw-troubleshooting/scripts/` — helper scripts for diagnostics
-
-- `skills/openclaw-instance-discovery/SKILL.md` — entrypoint for instance discovery
-- `skills/openclaw-instance-discovery/playbooks/` — discovery sequence, fallback ladder, registry contract
-
-- `skills/openclaw-troubleshooting-compound/SKILL.md` — companion skill that drafts and applies post-incident learnings
-
-- `local/memory/` — shared local memory (gitignored): personal incident log and signatures
-- `local/state/` — shared local state (gitignored): instance registry
-
-`skills/openclaw-troubleshooting/agents/openai.yaml` is optional Codex metadata only. It is intentionally thin and does not replace `SKILL.md`.
-
-## How OpenClaw Finds Skills
+### OpenClaw: Install
 
 OpenClaw loads skills from these locations, highest precedence first:
 
@@ -131,105 +80,150 @@ OpenClaw loads skills from these locations, highest precedence first:
 - Bundled skills
 - `skills.load.extraDirs`
 
-That means you can keep one canonical skill folder in this repo and install it into whichever of those locations makes sense for your workflow. Workspace-local installation is best when the skill should apply only to the current project. Shared installation is best when you want it available everywhere on the machine.
-
-## OpenClaw: Install
-
-If you want OpenClaw itself to load the skill, the recommended path is a source checkout managed at `~/src/openclaw-skills` plus a symlink into `~/.openclaw/skills`:
-
 ```bash
-mkdir -p ~/src
-git clone https://github.com/pejmanjohn/openclaw-skills.git ~/src/openclaw-skills
 ~/src/openclaw-skills/scripts/install-openclaw-skill.sh
 ```
 
-Update to the latest version with:
+Symlinks into `~/.openclaw/skills`. For workspace-local install:
+
+```bash
+~/src/openclaw-skills/scripts/install-openclaw-skill.sh --dest "/path/to/workspace/skills"
+```
+
+### Updating
 
 ```bash
 git -C ~/src/openclaw-skills pull
-~/src/openclaw-skills/scripts/install-openclaw-skill.sh
+# then re-run the install script(s) for the agent(s) you use
 ```
 
-If you want a workspace-local OpenClaw install instead of the shared machine-wide path, use:
+## How it works
 
-```bash
-WORKSPACE="/path/to/openclaw-workspace"
-~/src/openclaw-skills/scripts/install-openclaw-skill.sh --dest "$WORKSPACE/skills"
+Three principles do most of the work:
+
+**1. Local is runtime truth.** The agent and OpenClaw run on the same host, so local binary/help/config/state/logs are what actually govern behavior. Docs at [docs.openclaw.ai](https://docs.openclaw.ai) are procedural truth for the latest release, but if the local binary disagrees with the docs, trust the local binary. Every skill grounds in live `openclaw <subcommand> --help` output before acting.
+
+**2. Skills chain together.** Troubleshooting auto-triggers instance discovery on first run. Update and troubleshooting both read the saved instance registry. After an incident, troubleshooting suggests the compound skill to capture learnings. Each skill is lean; together they're an end-to-end workflow.
+
+**3. Local memory compounds.** Every install has a gitignored `local/` tree. Incident-log entries written by the compound skill, the instance registry written by discovery, and the upgrade-history ledger written by update — all live there, per machine, never pushed upstream. Future sessions read them as context, so the troubleshooting that took an hour the first time becomes a 30-second lookup the next time.
+
+```
+┌──────────────────────────┐     ┌──────────────────────────────┐
+│ openclaw-troubleshooting │     │ openclaw-troubleshooting-    │
+│                          │     │ compound                      │
+│  1. Read incident log    │     │                              │
+│  2. Diagnose & fix       │────▶│  1. Review conversation      │
+│  3. Suggest /compound    │     │  2. Draft tight incident     │
+│                          │     │  3. Draft new signatures     │
+└──────────────────────────┘     │  4. Check for duplicates     │
+                                 │  5. Write to local memory    │
+                                 └──────────────────────────────┘
 ```
 
-## Codex: Install
+## The skills in depth
 
-For Codex, the recommended local install path is a source checkout at `~/src/openclaw-skills` plus a symlink into `$CODEX_HOME/skills` or `~/.codex/skills`:
+### openclaw-update
 
-```bash
-mkdir -p ~/src
-git clone https://github.com/pejmanjohn/openclaw-skills.git ~/src/openclaw-skills
-~/src/openclaw-skills/scripts/install-codex-skill.sh
+Safe, reviewable update from the installed version to the latest on your channel — one approval gate up front ("go from X to Y?"), then the skill runs through eight phases and stops only if something anomalous happens. A clean run lands on a personalized highlights briefing filtered to features you actually use.
+
+Under the hood: eight phases (target → preflight → release-notes pre-check → backup → update → restart → verify → highlights). Anomaly stops: BREAKING release-note flag, backup verify failure, non-zero update exit, gateway doesn't return healthy, or a post-update gate yellow/red.
+
+What makes it safe:
+- Captures a full JSON inventory snapshot before the update (channels, crons, plugins, skills, doctor state) and diffs after, so silent regressions are caught.
+- Always passes `--no-restart` to `openclaw update`; never restarts the gateway mid-session on an OpenClaw-native agent (which would kill the agent); emits manual commands for that case.
+- On pnpm/npm installs where dep state is uncertain, checks bundled-extension staging completeness before advancing to restart (the `stageRuntimeDependencies: true` case) and offers a scoped per-extension repair if needed.
+- Finishes with a highlights briefing filtered against the user's inventory — only surfaces release-note items touching features the user actually has configured.
+
+Full details: `skills/openclaw-update/SKILL.md` and `playbooks/`.
+
+### openclaw-troubleshooting
+
+Two phases, kept strictly separate: **diagnose** (read-only) and **repair** (requires explicit user approval). Running a command that reads state is always allowed; running a command that writes state never happens without a clear yes from the user. A broad prompt like "fix my openclaw" is not authorization to change config.
+
+Loads the instance registry on activation; auto-triggers `openclaw-instance-discovery` if missing. Announces the target in plain language before touching anything. Reads past incidents (both shipped patterns and your local per-machine log) before starting fresh diagnosis.
+
+### openclaw-instance-discovery
+
+Rarely invoked directly. The first time the troubleshooting skill runs, it calls discovery to build a registry of OpenClaw Gateway instances on the machine — launchd/systemd services, config paths, state dirs, ports. The registry is small, hand-readable, and lives at `$REPO_ROOT/local/state/instances.json`.
+
+Only rescan manually if you've added or removed an OpenClaw install.
+
+### openclaw-troubleshooting-compound
+
+Closes the loop after an incident. Reviews the conversation, drafts a tight incident-log entry, drafts any new error signatures, and applies on user confirmation.
+
+The log is a lookup table, not a postmortem narrative: each entry targets ~200-300 words because future troubleshooting sessions read the whole log into context. Format discipline is spelled out in the skill's `SKILL.md`.
+
+## Shared Local Memory
+
+All four skills share a single gitignored `local/` directory at the repo root. Inside it, `local/memory/` holds learned reference material (incident log, error signatures, upgrade history) and `local/state/` holds structured machine state (the instance registry).
+
+Because `local/` lives at the repo root rather than inside any individual skill, **multiple installs share one memory automatically**. If Claude Code, Codex, and OpenClaw are all symlinked to the same source checkout at `~/src/openclaw-skills`, they read and write the same `local/memory/incident-log.md` and the same `local/state/instances.json`.
+
+The entire `local/` directory is gitignored, so per-user entries never conflict with `git pull` and never get pushed upstream.
+
+The shipped skills also contain their own seed content at `skills/openclaw-troubleshooting/playbooks/incident-log.md` and `playbooks/common-signatures.md` — general patterns that apply to any install. The troubleshooting skill reads both layers.
+
+| Layer | Location | Tracked by git | Contains |
+|---|---|---|---|
+| **Shipped** | `skills/openclaw-troubleshooting/playbooks/*.md` | Yes | General patterns, seed entries |
+| **Local** | `local/memory/*.md` | No (gitignored) | Your environment-specific entries |
+
+### Contributing upstream
+
+If you resolve an incident that reveals a **general pattern** other users would benefit from, you can contribute it back. Generalize the entry (replace machine-specific details with placeholders), and open a PR adding it to the shipped playbooks. See `CLAUDE.md` for PR-writing discipline — the short version: write capability specs, not trip reports.
+
+## Instance Discovery
+
+Beyond what's covered in *The skills in depth* above, two details worth knowing:
+
+- The registry records `discoveredFrom` — a short evidence string per instance (e.g. `launchd service ai.openclaw.gateway + config ~/.openclaw/openclaw.json`). When the troubleshooting skill announces "I'm targeting the OpenClaw I found at port 18789," it can cite exactly what evidence it used.
+- Discovery never dead-ends. If it finds nothing, it walks documented common install locations (`/opt/homebrew/bin/openclaw`, `~/.openclaw/openclaw.json`, etc.) before asking the user one tractable question.
+
+## Canonical layout
+
+Source of truth lives in `skills/<skill-name>/`. Each skill is self-contained:
+
+```
+skills/openclaw-troubleshooting/
+├── SKILL.md                  # entrypoint + routing logic
+├── playbooks/                # deep runbooks per symptom class
+│   ├── triage.md
+│   ├── gateway.md
+│   ├── config.md
+│   ├── channels.md
+│   ├── auth-and-pairing.md
+│   ├── tools-and-nodes.md
+│   ├── common-signatures.md
+│   ├── incident-log.md
+│   ├── validation-scenarios.md
+│   ├── config-writing.md
+│   └── docs-navigation.md
+├── scripts/                  # helper diagnostic scripts
+└── agents/openai.yaml        # thin Codex metadata (optional)
 ```
 
-Update to the latest version with:
+Other skills follow the same pattern: `SKILL.md` at the root, `playbooks/` for supporting files, optional `scripts/` for repeatable helpers.
 
-```bash
-git -C ~/src/openclaw-skills pull
-~/src/openclaw-skills/scripts/install-codex-skill.sh
-```
+Shared across all skills:
 
-Then restart Codex so it reloads the installed skill.
+- `local/memory/` — per-user, gitignored, written at runtime by the compound skill
+- `local/state/` — per-user, gitignored, written at runtime by discovery
 
-`skills/openclaw-troubleshooting/agents/openai.yaml` is optional metadata only. The canonical instructions remain in `SKILL.md`.
+## Agent-neutral vs. agent-specific
 
-## Claude Code: Install
+Agent-neutral (works for Claude Code, Codex, OpenClaw):
 
-For Claude Code, the recommended local install path is a source checkout at `~/src/openclaw-skills` plus a symlink into `~/.claude/skills`:
-
-```bash
-mkdir -p ~/src
-git clone https://github.com/pejmanjohn/openclaw-skills.git ~/src/openclaw-skills
-~/src/openclaw-skills/scripts/install-claude-skill.sh
-```
-
-Update to the latest version with:
-
-```bash
-git -C ~/src/openclaw-skills pull
-~/src/openclaw-skills/scripts/install-claude-skill.sh
-```
-
-For a project-local Claude install instead of a personal install, use:
-
-```bash
-PROJECT_ROOT="/path/to/project"
-~/src/openclaw-skills/scripts/install-claude-skill.sh --dest "$PROJECT_ROOT/.claude/skills"
-```
-
-Supporting files next to `SKILL.md` are allowed, so the same `playbooks/` and `scripts/` layout can be reused without creating a second skill source. The canonical entrypoint is `.claude/skills/openclaw-troubleshooting/SKILL.md` in a project install or `~/.claude/skills/openclaw-troubleshooting/SKILL.md` in a personal install.
-
-## Agent-Neutral Vs Agent-Specific
-
-Agent-neutral:
-
-- `skills/openclaw-troubleshooting/SKILL.md`
-- `skills/openclaw-troubleshooting/playbooks/`
-- `skills/openclaw-troubleshooting/scripts/collect-openclaw-diagnostics.sh`
-- `skills/openclaw-instance-discovery/SKILL.md`
-- `skills/openclaw-instance-discovery/playbooks/`
-- `skills/openclaw-troubleshooting-compound/SKILL.md`
-- `local/memory/` and `local/state/` (gitignored, written at runtime)
+- `skills/<skill>/SKILL.md`
+- `skills/<skill>/playbooks/**`
+- `skills/<skill>/scripts/**`
+- The shared `local/` tree
 
 Agent-specific:
 
-- `skills/openclaw-troubleshooting/agents/openai.yaml`
-- installation paths and discovery rules for Codex and Claude Code
+- `skills/openclaw-troubleshooting/agents/openai.yaml` — thin Codex metadata, does not replace `SKILL.md`
+- Install paths and discovery rules per harness
 
-The goal is to keep the troubleshooting content canonical and portable, while any agent-specific metadata stays thin and optional.
+The goal is canonical, portable skill content with any agent-specific metadata staying thin and optional. Future expansion (new skills) follows the same pattern: one canonical directory under `skills/`, a short trigger-oriented `SKILL.md`, supporting references in `playbooks/`, optional helper scripts.
 
-## Future expansion
-
-Future skills should follow the same pattern:
-
-- one canonical skill directory under `skills/`
-- a short trigger-oriented `SKILL.md`
-- supporting references for details
-- small helper scripts for repeatable diagnostics
-
-That keeps the repo easy to extend without drifting into duplicated Codex- or Claude-specific trees.
+See [`CLAUDE.md`](./CLAUDE.md) for contributor discipline — especially on PR descriptions (capability specs, not trip reports).
