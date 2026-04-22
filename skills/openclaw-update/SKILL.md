@@ -47,7 +47,7 @@ The result must contain both `local/` and `skills/` directories. Use `$REPO_ROOT
 - **Refuse to update on a broken baseline.** If `openclaw doctor` is red, `openclaw config validate` fails, or the gateway is crash-looping before you start, stop and hand off to `openclaw-troubleshooting`. Do not layer an update on top of an already-unhealthy install.
 - **Know when it's safe to restart the gateway from within a session.** The hard rule is for **OpenClaw-native agents** (agents that route their own commands through the gateway they're restarting) — for those, `openclaw gateway restart` kills the agent mid-command and leaves stale locks. **External harnesses** (Claude Code, Codex CLI, a plain shell) are not routing through the gateway, so they can safely execute the two-step `stop` + `launchctl bootstrap` sequence documented in Phase 5. If you're an OpenClaw-native agent, emit the manual commands for the user instead. If you're an external harness, you may run them yourself. When in doubt, emit and wait — the skill is always correct if it hands off the restart.
 - **Always pass `--no-restart` to `openclaw update`.** This is non-negotiable. The skill uses `--no-restart --yes` and then asks the user to restart the gateway.
-- **Stop at every phase gate.** Each phase ends with a decision point. Do not auto-advance through preflight → backup → update → restart → verify → highlights. Ask for approval at each boundary.
+- **One approval gate, then flow.** The only boundary that always asks for approval is the end of Phase 1: "we're upgrading from X to Y, proceed?" After that yes, Phases 2-8 auto-advance. The skill only stops again if something anomalous happens: release notes flag a BREAKING change or deprecation, a backup fails to verify, the update command exits non-zero, the gateway doesn't come back healthy after restart, or a post-update gate goes yellow/red. A smooth run surfaces the highlights at the end without asking mid-flight.
 
 ## STOP — Announce the target before ANY work
 
@@ -118,15 +118,15 @@ Announce a short release summary:
 - Counts: channels configured, crons configured, plugins loaded, skills available
 - `doctor` status, `config validate` status
 
-**Gate:** If baseline doctor is red or config validate fails, refuse to proceed. Hand off to `openclaw-troubleshooting`.
+**Gate (anomaly):** If baseline doctor is red or config validate fails, refuse to proceed. Hand off to `openclaw-troubleshooting`.
 
-**Gate:** Otherwise, ask the user for approval to continue.
+**Gate (the one approval gate):** Otherwise, ask the user to confirm the upgrade from `<installed>` to `<target>` before advancing. This is the only routine approval gate; after this yes, Phases 2-8 run automatically and only stop on anomalies.
 
 ### Phase 2 — Release-notes pre-check (soft, non-blocking)
 
 Fetch release notes for the version range from current to target (multiple point releases may be involved). Skim for BREAKING changes, deprecations, or migration steps. Summarize anything flagged in 1-3 bullets.
 
-**Gate:** Present the summary. Ask the user to acknowledge before continuing. This is informational — it does not block the update, but gives the user a chance to bail out or ask questions.
+**Gate (anomaly-only):** If BREAKING changes or deprecations are flagged in the version range, stop and surface them before continuing — the user may want to bail out. Otherwise auto-advance to Phase 3; the summary is informational and the user can read it after the fact in the Phase 8 highlights.
 
 See `playbooks/post-update-highlights.md` for how to fetch release notes (the same source is reused in Phase 7).
 
@@ -136,7 +136,7 @@ Run `openclaw backup create` (native archive covering config, credentials, sessi
 
 See `playbooks/backup.md` for the full sequence and manifest format.
 
-**Gate:** Confirm both the native archive and the explicit copy exist and verify. Ask approval to proceed.
+**Gate (anomaly-only):** If `backup verify` fails or the explicit copy can't be created, halt. Otherwise auto-advance to Phase 4.
 
 ### Phase 4 — Run the update
 
@@ -156,7 +156,9 @@ openclaw update --no-restart --yes
 
 See `playbooks/cli-update.md` for install-kind notes (pnpm/npm/brew/git-checkout — all handled by `openclaw update` internally; the skill does not invoke package managers directly) and the exact flag reference.
 
-**Gate:** Confirm the update command exited clean. If it exited with errors, halt and consult `openclaw-troubleshooting`.
+**Gate (anomaly-only):** If `openclaw update` exits non-zero OR `openclaw --version` still reports the old version after, halt and consult `openclaw-troubleshooting`. Otherwise run the staging-completeness check below and auto-advance to Phase 5.
+
+**Extension-staging post-check (added after run 2):** After the update completes, enumerate bundled extensions whose `package.json` declares `openclaw.bundle.stageRuntimeDependencies: true` but whose sibling `node_modules/` directory is missing. If any enabled or currently-loaded plugin is in that set, a gateway restart will crash-load it. Offer a scoped repair — `pnpm install --prod` inside each at-risk extension directory — before advancing to Phase 5. See `playbooks/cli-update.md` for the exact enumeration + repair commands.
 
 ### Phase 5 — Gateway restart
 
@@ -188,7 +190,7 @@ rm -f "$TMPDIR/openclaw-$(id -u)/gateway."*.lock
 # then re-run enable + bootstrap
 ```
 
-**Gate:** `openclaw gateway probe` returns `Connect: ok · RPC: ok` with `app <target-version>` before moving to Phase 6.
+**Gate (anomaly-only):** If `openclaw gateway probe` still fails past ~20s, or the reported `app` version doesn't match the target, halt and investigate. Otherwise auto-advance to Phase 6.
 
 ### Phase 6 — Post-update gates (diff vs. baseline)
 
@@ -205,7 +207,7 @@ A PASS requires:
 - Plugin count unchanged; no new init failures
 - `config validate` still passes
 
-**Gate:** On PASS, proceed to Phase 7. On any regression, go to `playbooks/rollback.md`.
+**Gate (anomaly-only):** On any red gate, halt and go to `playbooks/rollback.md`. On any yellow gate, surface the specifics and ask for a judgment call. On all-green, auto-advance to Phase 7.
 
 ### Phase 7 — Upgrade history ledger
 
@@ -248,7 +250,7 @@ Read only the file that matches the phase you're in:
 
 - **Know who's allowed to restart the gateway from within a session.** See Quick start. OpenClaw-native agents must emit manual commands and wait. External harnesses (Claude Code, Codex, plain shell) may run the three-step `stop` + `enable` + `bootstrap` sequence themselves. Either way, the `enable` step is mandatory — without it, `bootstrap` fails with a cryptic I/O error.
 - **Always pass `--no-restart` to `openclaw update`.** No exceptions.
-- **Stop at every phase gate.** Do not chain phases without explicit approval. A single "go ahead and update" is not authorization to skip past Phase 6 verification.
+- **One approval gate, not many.** After the Phase 1 version-confirmation yes, Phases 2-8 auto-advance. Stop only on anomalies (BREAKING notes, verify failure, non-zero update exit, restart not healthy, yellow/red post-update gate). A clean run should feel like one yes → a short wait → a highlights briefing.
 - **Refuse to update a broken install.** If baseline is red, fix it first via `openclaw-troubleshooting`, then come back.
 - **Do not invoke package managers directly.** No `npm install -g openclaw`, no `brew upgrade openclaw`, no `git pull` in the source checkout. `openclaw update` handles install-kind routing internally.
 - **Do not write to Claude Code's memory system.** All update state goes to `$REPO_ROOT/local/`.

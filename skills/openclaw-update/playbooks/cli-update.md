@@ -68,6 +68,39 @@ openclaw gateway status
 
 The gateway should still be running on the old binary (PID unchanged, uptime continuing from before the update). This confirms `--no-restart` was honored. The new binary is installed on disk but not loaded yet — Phase 5's manual restart is what activates it.
 
+### 5. Staging-completeness check for bundled extensions
+
+Some bundled extensions declare `openclaw.bundle.stageRuntimeDependencies: true` in their own `package.json`, which means the install must also stage a per-extension `node_modules/` directory with their runtime deps. On `package`-kind installs via pnpm/npm (especially when `update.deps.status` was `unknown` in the preflight snapshot), the update sometimes stages only a subset. Plugins that end up missing their staged deps will crash-load on the next gateway restart with `Cannot find module '<x>'` errors — same failure-class as an unresolved SecretRef crash loop, different trigger.
+
+Enumerate affected extensions:
+
+```bash
+INSTALL_ROOT="$(openclaw update status --json | jq -r '.update.root')"
+MISSING=()
+for pkg in "$INSTALL_ROOT"/dist/extensions/*/package.json; do
+  ext=$(dirname "$pkg" | xargs basename)
+  stage=$(jq -r '.openclaw.bundle.stageRuntimeDependencies // false' "$pkg" 2>/dev/null)
+  [ "$stage" != "true" ] && continue
+  [ -d "$(dirname "$pkg")/node_modules" ] && continue
+  MISSING+=("$ext")
+done
+```
+
+Intersect `MISSING` with the list of plugins that are `enabled` or currently `loaded` (from the baseline snapshot's `plugins_summary` and `openclaw plugins list`). Disabled plugins won't be loaded by the gateway, so a missing `node_modules/` for a disabled plugin is harmless — skip those.
+
+If any *enabled or loaded* plugin is in `MISSING`, propose the scoped repair to the user before advancing to Phase 5:
+
+```bash
+for ext in "${AT_RISK[@]}"; do
+  cd "$INSTALL_ROOT/dist/extensions/$ext"
+  pnpm install --prod      # or `npm install --omit=dev` on npm-kind installs
+done
+```
+
+`--prod` (pnpm) / `--omit=dev` (npm) skips devDependencies since only runtime deps are needed. The repair only writes to the per-extension `node_modules/` directory — never to `openclaw.json`, secrets, gateway state, or anything outside the extension dir.
+
+After the repair, re-run `openclaw doctor`. Expect `Errors: 0` before advancing to Phase 5. If doctor still flags missing modules, hand off to `openclaw-troubleshooting` rather than iterating on the repair in the update flow.
+
 ## Install-kind specifics (reference only — do not invoke directly)
 
 The skill does NOT call these directly. `openclaw update` routes to the right one internally. This reference exists so you understand what `--dry-run` output means.
@@ -94,7 +127,7 @@ If `openclaw update` exits non-zero:
 
 ## What NOT to do
 
-- **Do not run `npm install -g openclaw` directly**, or any other package-manager command. Always go through `openclaw update`.
+- **Do not run `npm install -g openclaw` directly**, or any other package-manager command to install OpenClaw itself. Always go through `openclaw update`. (Exception: the staging-completeness repair in step 5 runs `pnpm install --prod` / `npm install --omit=dev` scoped to a specific extension's directory — that's per-extension dep staging, not a CLI reinstall, and is the only sanctioned use of a package manager inside this playbook.)
 - **Do not `git pull` in a source checkout.** `openclaw update` knows how to update a git install (it runs `git fetch`, resolves the target, rebases, rebuilds, runs doctor). Manual git operations skip the rebuild and doctor steps.
 - **Do not omit `--no-restart`.** No "just this once." No "it'll be faster." No.
 - **Do not run `openclaw update` a second time during the same run** to "make sure it worked." The first run either succeeded or didn't. Re-running doesn't add signal; it risks compounding an error.

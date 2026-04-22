@@ -31,10 +31,17 @@ Capture from `update status --json`:
 - `update.root` — install directory
 - `update.installKind` — `package` (npm/pnpm/brew) or `git`
 - `update.packageManager` — `npm`, `pnpm`, `brew`, or `git`
+- `update.deps.status` and `update.deps.reason` — dependency-install state
 - `channel.value` — `stable`, `beta`, or `dev`
 - `channel.source` — where the channel setting came from
 - `availability.available` — is an update available
 - `availability.latestVersion` — the target version
+
+**Dep-staging risk warning.** If `update.deps.status` is `"unknown"` (commonly with `reason: "lockfile missing"`) on a `package` install via pnpm/npm, record it in the snapshot's `known_issues` with this text:
+
+> `deps.status=unknown` on a package-kind install: bundled extensions that declare `openclaw.bundle.stageRuntimeDependencies: true` may not be fully staged after the update. Phase 4's post-install check will enumerate any that end up missing `node_modules/` and offer a scoped repair.
+
+This is not a baseline-fail condition — many installs live in this state permanently. But it signals that the Phase 4 staging check is load-bearing on this install, not just a formality.
 
 ### Gateway
 
@@ -84,9 +91,11 @@ When you see this error, fall back to this two-step enumeration:
 
 2. **Channel probe status from `openclaw doctor`:**
    ```bash
-   openclaw doctor 2>&1 | grep -E '^(Discord|Slack|Telegram|BlueBubbles|WhatsApp|Matrix|Mattermost): (ok|fail)'
+   openclaw --no-color doctor 2>&1 | grep -E '^(Discord|Slack|Telegram|BlueBubbles|WhatsApp|Matrix|Mattermost): (ok|fail)'
    ```
    Doctor routes through the gateway runtime and captures per-channel probe status (provider name, display name, latency). This is the authoritative probe result when `channels status --probe` can't run.
+
+   The `--no-color` flag is important: doctor's output contains ANSI color escapes around channel names and status words, which break the literal-match `grep` if color codes land between `"Discord"` and `": ok"`. If `--no-color` isn't available on the installed binary, fall back to stripping escapes with `| sed $'s/\\x1b\\[[0-9;]*m//g'` before the grep.
 
 Record in the snapshot under `channels[]` with `source: "config + doctor probe"` to mark that the fallback path was used. Also record the failure under `known_issues` so the post-update diff doesn't treat the fallback as a regression.
 
