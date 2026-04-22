@@ -69,27 +69,42 @@ Produce two artifacts for the user to review:
 
 **A. Incident log entry** (always)
 
-Draft a structured entry following this format:
+The incident log is read by the troubleshooting skill on every future run. Every word costs context on every future session. Write for that — aim for ~200-300 words per entry. If you're writing more, you're probably narrating the postmortem instead of indexing it.
+
+Use this tight format:
 
 ```markdown
-## Short description of the incident
+## <one-line title: what broke, root-cause-flavored if possible>
 
 **Date:** YYYY-MM-DD
+**Install:** <install-kind, OS, the one or two env details a future session needs to recognize this>
+**Signature:** `<most distinctive error string or observable symptom, one line>`
 
-**Environment:** Relevant setup details (profile, OS, service manager, ports, paths).
+**Root cause:** One or two sentences. What was actually wrong.
 
-**Symptoms:** What the user saw.
-
-**Root cause:** What was actually wrong.
-
-**What didn't work:** Approaches that failed or wasted time.
-
-**What fixed it:** The actual fix, step by step. Include exact commands that worked.
-
-**Prevention:** What would have avoided this or caught it faster next time.
+**Fix:**
+```bash
+# the minimum copy-pasteable commands that resolved it
 ```
 
-Include specific details from this user's environment: exact paths, port numbers, profile names, config file locations, service labels. These details are what make the entry useful for this specific user's future sessions.
+**Trap:** *(include only if there's something non-obvious that would waste future-you's time — otherwise omit this section entirely)* one or two bullets max.
+```
+
+**Field discipline:**
+- **Title** — root-cause-flavored, not symptom-flavored, so scanning the log tells you what class of problem each entry represents.
+- **Install** — one line. The troubleshooting skill can query live state; this field is for recognition, not re-derivation. Example: `macOS, package/pnpm, default profile`.
+- **Signature** — the exact error string a future session would grep for. Goes in code ticks. One line.
+- **Root cause** — plain prose, 1-2 sentences. Don't restate symptoms; explain what was happening underneath.
+- **Fix** — a code block, nothing else. Commands as run, not described. If the fix required a multi-step manual procedure, keep the block minimal and link to a playbook section instead of inlining the procedure.
+- **Trap** — omit by default. Only include if there's a concrete dead-end pattern a future session would fall into (e.g. "inspect/list commands don't trigger the lazy-stage, only load paths do"). Not for tutorial content.
+
+**Do NOT include:**
+- A separate **Symptoms** section — the Signature line does this job; longer symptom narratives bloat context without adding lookup value.
+- A **What didn't work** section for every entry — only the `Trap:` bullets above, and only when genuinely non-obvious. Most failed hypotheses are noise in a log file.
+- A **Prevention** section — if prevention means "edit a skill/playbook", that belongs in a PR to this repo, not the incident log. If it means "be careful", it's too generic to be useful. The log captures what happened; the skills capture how to avoid it next time.
+- Environment details beyond the one-line Install field — paths/ports/versions that future sessions can trivially query from live state.
+
+**When your draft runs long:** cut paragraphs to sentences, cut sentences to clauses, cut clauses to code comments inside the Fix block. If the incident genuinely can't be compressed, the entry might be describing multiple distinct failures — split it into separate root-cause-specific entries instead of one sprawling one.
 
 **B. New error signatures** (if applicable)
 
@@ -150,8 +165,11 @@ These files are gitignored — they won't show up in `git status` or accidentall
 
 ## Quality rules
 
-- **Be specific, not generic.** "Gateway runs on port 18789 under `--profile dev` with state at `~/.openclaw-dev`" is more useful than "check which profile is active." The troubleshooting skill already has the generic guidance — this log exists for the specifics.
-- **Include exact commands that worked.** Future sessions can copy-paste instead of rediscovering.
-- **One entry per root cause.** If an incident had cascading failures, focus on what started the chain. Mention the cascade in the symptoms.
-- **Error signatures should use the exact string** from logs or terminal output, not a paraphrase.
-- **Keep entries terse but complete.** This is a lookup table, not a postmortem narrative.
+- **The incident log is a lookup table, not a postmortem narrative.** The troubleshooting skill loads it into context on every future run. Aim for ~200-300 words per entry. If you're writing more, delete before you write more.
+- **One entry per root cause.** Cascading failures? Focus on what started the chain; mention the cascade inside the Root-cause sentence if it matters.
+- **Title on root cause, not symptom.** "Bundled plugin staging incomplete on pnpm install" scans better than "openclaw update ERROR".
+- **Signature strings are exact.** Copy-paste from terminal or logs, in code ticks. Not paraphrased, not lowercased, not prettied.
+- **Commands, not descriptions.** The Fix block is literal shell. If you catch yourself writing "first X, then Y", rewrite as commands.
+- **Omit empty sections.** Every field is opt-in if there's nothing useful to put there. Don't keep a Trap bullet just because the template has that slot.
+- **Environment minimalism.** One line of install shape. Live state is queryable; frozen snapshots bloat context without paying it back.
+- **Error signatures use the exact string** from logs or terminal output, not a paraphrase.
