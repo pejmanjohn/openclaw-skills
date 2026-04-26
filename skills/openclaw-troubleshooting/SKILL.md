@@ -120,6 +120,26 @@ Example of WRONG behavior:
 
 The second example is wrong because it made a config change without asking. Do not do this.
 
+> **Exception:** When an automated caller (typically `/openclaw-babysit --auto-fix`) invokes this skill with `OPENCLAW_TROUBLESHOOTING_AUTHORIZED=1` in the environment, the approval gate is replaced by an allowlist check. See `## Authorized-fix mode` below.
+
+## Authorized-fix mode
+
+This skill is interactive and approval-gated by default. When invoked by an automated caller — typically `/openclaw-babysit --auto-fix` — it can operate autonomously, but only within a tightly bounded allowlist.
+
+**Trigger:** the environment variable `OPENCLAW_TROUBLESHOOTING_AUTHORIZED=1` is set when this skill runs. Check it (`echo $OPENCLAW_TROUBLESHOOTING_AUTHORIZED`) before deciding whether to gate on user approval. It is the *only* signal that bypasses the approval gate.
+
+**Behavior when authorized:**
+
+1. **Skip the verbose announcement block.** Resolve the target silently from `local/state/instances.json` and proceed. The caller is automation; it doesn't need a human-facing target announcement.
+2. **Diagnose using the same playbooks** (`triage.md`, `common-signatures.md`, `incident-log.md`, `local/memory/*` if present).
+3. **Apply only allowlisted fixes.** Read `playbooks/auto-fix-allowlist.md`. If the diagnosis maps to an allowlisted signature with high confidence, apply the documented fix without asking. Otherwise emit a one-paragraph diagnosis and exit without modifying anything — the caller falls back to alert mode.
+4. **Be terse.** Output the signature matched, the fix applied (or "no allowlisted fix"), and the verification result. Skip preambles and announcement headers — assume the caller is automation.
+5. **Never apply config edits in authorized mode.** Even if a config edit is the documented fix for a signature, exit and alert instead. Config-shaped signatures (e.g. `unresolved SecretRef`, channel `enabled`-flag mismatches) frequently share their surface error string with non-config root causes such as plugin-load failures, module-cache corruption, or staging gaps — auto-applying a config fix on a misdiagnosed incident can move a degraded install to a worse one. The local incident log accumulates environment-specific worked examples; the rule above applies regardless of how compelling the signature match looks.
+
+**"High confidence" means** the live evidence uniquely identifies one allowlisted signature with no plausible alternate root cause. If two patterns share the same surface signature, that is not high confidence — exit and alert.
+
+Authorized mode does **not** change the set of fixes the skill knows about (only the approval gate for allowlisted ones), the read-only default for any other invocation (without the env var, behavior is unchanged), or the "never bypass safety checks" rule (no `--no-verify`, no sudo escalation, ever).
+
 ## Workflow
 
 0. **Preflight: load the instance registry, auto-trigger discovery if needed, and announce the target.** Then resolve profile and stop any crash loops — see Quick start and the STOP — Announce target section. This is non-negotiable. Without a known target, every other step risks operating on the wrong install.
@@ -127,7 +147,7 @@ The second example is wrong because it made a config change without asking. Do n
 2. Find the active config path with `openclaw config file`, then inspect local config, env overrides, launchctl or service environment, and current logs before changing anything.
 3. Classify the problem quickly: gateway/runtime, dashboard or Control UI, channels and delivery, auth or pairing, config validation, tools, nodes, or plugin surface.
 4. Prefer local runtime truth when local output conflicts with memory or website docs. If `docs.openclaw.ai` shows a newer command flow, adapt it to the locally installed command surface instead of assuming the docs are wrong or the binary is broken.
-5. **STOP and present your diagnosis.** Tell the user what you found, what you think the root cause is, and what you recommend as a fix. **Wait for explicit approval before making any changes.** Do not proceed to step 6 without a clear "yes" or equivalent from the user.
+5. **STOP and present your diagnosis.** Tell the user what you found, what you think the root cause is, and what you recommend as a fix. **Wait for explicit approval before making any changes.** Do not proceed to step 6 without a clear "yes" or equivalent from the user. *(In authorized mode, replace this step with the allowlist check from `## Authorized-fix mode`.)*
 6. Make the smallest reversible fix the user approved, rerun the exact failing command, and capture the before and after evidence.
 
 ## Reference map
@@ -145,6 +165,7 @@ Read only the file that matches the observed symptom:
 - `playbooks/incident-log.md` -> general post-incident patterns (shipped with repo). Also check `$REPO_ROOT/local/memory/incident-log.md` for environment-specific learnings from past sessions on this machine.
 - `playbooks/docs-navigation.md` -> how to locate the right OpenClaw doc page using docs frontmatter (`summary`, `read_when`, `title`) before browsing or grepping blindly.
 - `playbooks/config-writing.md` -> the discipline for safe config changes: resolve the active config first, propose the exact narrow change, back up before writing, validate immediately, and revert on failure.
+- `playbooks/auto-fix-allowlist.md` -> the bounded set of fixes that may be auto-applied when invoked with `OPENCLAW_TROUBLESHOOTING_AUTHORIZED=1`. Read this before applying anything in authorized mode.
 
 ## After resolving an incident
 

@@ -10,6 +10,7 @@ Natural-language skills for running OpenClaw. Tell your AI harness to "update op
 | **openclaw-troubleshooting** | `"openclaw isn't working"`, `"not replying"`, `"won't start"`, `"fix my openclaw"` | Evidence-based diagnosis. Reads live CLI output, config, and logs before touching anything. Explicit approval required before any repair — diagnosis and repair are separate phases. |
 | **openclaw-instance-discovery** | `"find my openclaw"`, `"rescan"` | Builds a registry of OpenClaw installs on this machine. Auto-triggered by troubleshooting on first run; you rarely invoke it directly. |
 | **openclaw-troubleshooting-compound** | After an incident resolves | Drafts a tight incident-log entry + error signatures and writes them to your per-user local memory. Next session reads them back as context. |
+| **openclaw-babysit** | `"babysit my openclaw"`, `"keep openclaw running"`, `"watch my channels"`. Designed to wrap with `/loop` (e.g. `/loop 5m /openclaw-babysit`). | Recurring channel-health monitor. Each tick checks every enabled channel and either alerts (default) or, with `--auto-fix`, invokes troubleshooting in authorized mode to apply allowlisted restart-family fixes autonomously. Bounded iterations, channels-as-success criterion. |
 
 Non-technical users can fire up Claude Code in any directory, say "openclaw is broken", and these skills figure out which OpenClaw to target and what to do — without the user needing to know where OpenClaw is installed.
 
@@ -28,6 +29,15 @@ Then in any Claude Code session, just talk:
 > openclaw isn't responding
 > find my openclaw
 ```
+
+Or wrap a recurring health check around your channels with Claude Code's `/loop`:
+
+```
+> /loop 5m /openclaw-babysit              # alert mode — tells you when channels degrade
+> /loop 5m /openclaw-babysit --auto-fix   # autonomous mode — applies allowlisted fixes and verifies
+```
+
+Babysit reports a one-line OK on healthy ticks; a degraded reading either alerts you (default) or, in `--auto-fix` mode, invokes troubleshooting non-interactively to apply restart-family fixes from a bounded allowlist. See [openclaw-babysit](#openclaw-babysit) below for the full contract.
 
 Update the skill itself later with:
 
@@ -153,6 +163,17 @@ Only rescan manually if you've added or removed an OpenClaw install.
 Closes the loop after an incident. Reviews the conversation, drafts a tight incident-log entry, drafts any new error signatures, and applies on user confirmation.
 
 The log is a lookup table, not a postmortem narrative: each entry targets ~200-300 words because future troubleshooting sessions read the whole log into context. Format discipline is spelled out in the skill's `SKILL.md`.
+
+### openclaw-babysit
+
+A recurring health check designed to be wrapped by `/loop`. The success criterion is **channels working** — can the user reach their agents through Slack, Discord, Telegram, BlueBubbles, etc. — not "is the gateway process alive." A gateway with `probe: ok` but every channel crash-looping is degraded.
+
+Two modes, one flag:
+
+- `/loop <interval> /openclaw-babysit` — alert mode (default). Reports degradation and stops, leaving the user to run `/openclaw-troubleshooting` interactively.
+- `/loop <interval> /openclaw-babysit --auto-fix` — autonomous mode. Invokes `/openclaw-troubleshooting` with `OPENCLAW_TROUBLESHOOTING_AUTHORIZED=1`, which lets it apply fixes from a tightly bounded allowlist (`auto-fix-allowlist.md`) without the usual approval gate. Capped at three distinct fixes per incident; same fix recommended twice in a row triggers give-up. Auto-fix never modifies config — config-shaped signatures always go to the alert path because they are the most prone to misclassification.
+
+Per-tick state lives at `local/state/babysit-<instance-id>.json` (gitignored, atomically written). An incident is closed only after two consecutive healthy ticks, so a single probe-during-healthy-window reading can't fool the loop into declaring victory mid-flap.
 
 ## Shared Local Memory
 
