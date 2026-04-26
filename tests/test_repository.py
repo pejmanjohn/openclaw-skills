@@ -697,3 +697,229 @@ class TroubleshootingRegistryIntegrationTests(unittest.TestCase):
     def test_skill_documents_override_grammar(self) -> None:
         text = (ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md").read_text()
         self.assertIn("use the other one", text.lower())
+
+
+class TroubleshootingAuthorizedModeTests(unittest.TestCase):
+    SKILL = ROOT / "skills" / "openclaw-troubleshooting" / "SKILL.md"
+    ALLOWLIST = ROOT / "skills" / "openclaw-troubleshooting" / "playbooks" / "auto-fix-allowlist.md"
+
+    def test_skill_documents_authorized_fix_section(self) -> None:
+        text = self.SKILL.read_text()
+        self.assertIn("## Authorized-fix mode", text)
+
+    def test_skill_documents_env_var_trigger(self) -> None:
+        text = self.SKILL.read_text()
+        self.assertIn("OPENCLAW_TROUBLESHOOTING_AUTHORIZED", text)
+
+    def test_skill_links_to_allowlist_in_reference_map(self) -> None:
+        text = self.SKILL.read_text()
+        self.assertIn("auto-fix-allowlist.md", text)
+
+    def test_skill_documents_no_config_edits_in_auto_mode(self) -> None:
+        text = self.SKILL.read_text()
+        lowered = text.lower()
+        self.assertIn("never apply config edits in authorized mode", lowered)
+
+    def test_skill_preserves_read_only_default(self) -> None:
+        text = self.SKILL.read_text()
+        # The pre-existing read-only discipline section must still be present
+        # so that non-authorized invocations remain interactive.
+        self.assertIn("## Read-only discipline", text)
+        self.assertIn("Wait for explicit approval", text)
+
+    def test_allowlist_file_exists(self) -> None:
+        self.assertTrue(self.ALLOWLIST.is_file(), "missing auto-fix-allowlist.md")
+
+    def test_allowlist_documents_inclusion_criteria(self) -> None:
+        text = self.ALLOWLIST.read_text()
+        self.assertIn("## Inclusion criteria", text)
+        for criterion in ["Unambiguous signature", "Reversible", "Idempotent", "No config edits", "No privilege escalation"]:
+            with self.subTest(criterion=criterion):
+                self.assertIn(criterion, text)
+
+    def test_allowlist_includes_restart_family_entries(self) -> None:
+        text = self.ALLOWLIST.read_text()
+        # The three patterns from the local incident log that babysit should be able to auto-fix.
+        for marker in [
+            "Cached ESM module-load failure",
+            "errno-5",
+            "Stale gateway lock files",
+        ]:
+            with self.subTest(marker=marker):
+                self.assertIn(marker, text)
+
+    def test_allowlist_explicitly_excludes_config_edits(self) -> None:
+        text = self.ALLOWLIST.read_text()
+        self.assertIn("Explicitly NOT allowlisted", text)
+        # Channel-flag-mismatch SecretRef crashes must be excluded as a class —
+        # not a single-channel callout. The "any channel" language and the
+        # generic placeholder pattern guard against re-specializing the entry.
+        self.assertIn("any channel", text.lower())
+        self.assertIn("channels.<name>.enabled", text)
+        self.assertIn("SecretRef", text)
+        # Config edits in general must be excluded.
+        self.assertIn("config edits are never auto-applied", text.lower())
+
+
+class BabysitSkillMetadataTests(unittest.TestCase):
+    SKILL = ROOT / "skills" / "openclaw-babysit" / "SKILL.md"
+    HEALTH = ROOT / "skills" / "openclaw-babysit" / "playbooks" / "health-check.md"
+
+    def test_skill_file_exists(self) -> None:
+        self.assertTrue(self.SKILL.is_file(), "missing skills/openclaw-babysit/SKILL.md")
+
+    def test_skill_frontmatter_is_valid(self) -> None:
+        text = self.SKILL.read_text()
+        self.assertIn("name: openclaw-babysit", text)
+        self.assertIn("description: Use when", text)
+
+    def test_skill_description_includes_natural_language_triggers(self) -> None:
+        text = self.SKILL.read_text()
+        front = text.split("---")[1] if text.startswith("---") else text.split("---")[0]
+        for phrase in [
+            "babysit my openclaw",
+            "watch openclaw",
+            "keep openclaw running",
+            "stay reachable",
+            "auto-fix openclaw",
+            "monitor my channels",
+        ]:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, front)
+
+    def test_skill_description_documents_loop_invocation(self) -> None:
+        text = self.SKILL.read_text()
+        front = text.split("---")[1] if text.startswith("---") else text.split("---")[0]
+        self.assertIn("/loop", front)
+        self.assertIn("--auto-fix", front)
+
+    def test_skill_includes_required_top_level_sections(self) -> None:
+        text = self.SKILL.read_text()
+        for heading in [
+            "## Modes",
+            "## Quick start",
+            "## Workflow",
+            "## Auto-fix loop",
+            "## State file",
+            "## Reference map",
+            "## Quality rules",
+            "## Tooling/fallback notes",
+        ]:
+            with self.subTest(heading=heading):
+                self.assertIn(heading, text)
+
+    def test_skill_documents_iteration_cap(self) -> None:
+        text = self.SKILL.read_text()
+        # The cap was discussed with the user: ≤3 distinct fixes per incident.
+        self.assertIn("3", text)
+        self.assertIn("iteration cap", text.lower())
+
+    def test_skill_documents_two_consecutive_healthy_ticks_rule(self) -> None:
+        text = self.SKILL.read_text()
+        lowered = text.lower()
+        self.assertIn("two consecutive healthy", lowered)
+
+    def test_skill_documents_channels_as_success_criterion(self) -> None:
+        text = self.SKILL.read_text()
+        lowered = text.lower()
+        self.assertIn("channels working", lowered)
+        self.assertIn("channels-as-success", lowered)
+
+    def test_skill_invokes_troubleshooting_in_authorized_mode(self) -> None:
+        text = self.SKILL.read_text()
+        self.assertIn("OPENCLAW_TROUBLESHOOTING_AUTHORIZED", text)
+        self.assertIn("openclaw-troubleshooting", text)
+
+    def test_skill_documents_state_file_path(self) -> None:
+        text = self.SKILL.read_text()
+        self.assertIn("local/state/babysit-", text)
+        self.assertIn("atomic", text.lower())
+
+    def test_skill_describes_alert_and_auto_fix_modes(self) -> None:
+        text = self.SKILL.read_text()
+        self.assertIn("Alert", text)
+        self.assertIn("Auto-fix", text)
+        # Default must be alert-only — auto-fix is opt-in.
+        self.assertIn("opt-in", text.lower())
+
+    def test_skill_warns_about_native_harness(self) -> None:
+        text = self.SKILL.read_text()
+        # The skill documents that auto-fix from inside an OpenClaw-native agent
+        # would kill the agent mid-turn (per local incident log).
+        self.assertIn("OpenClaw-native", text)
+
+    def test_health_check_playbook_exists(self) -> None:
+        self.assertTrue(self.HEALTH.is_file(), "missing playbooks/health-check.md")
+
+    def test_health_check_documents_signal_set(self) -> None:
+        text = self.HEALTH.read_text()
+        for signal in [
+            "Enabled channel set",
+            "Gateway probe",
+            "doctor",
+            "log scan",
+            "runs counter",
+        ]:
+            with self.subTest(signal=signal):
+                self.assertIn(signal, text)
+
+    def test_health_check_documents_log_scan_window(self) -> None:
+        text = self.HEALTH.read_text()
+        # The 30s log-scan window is a deliberate choice; it must be documented
+        # so future maintainers understand why.
+        self.assertIn("30 seconds", text)
+
+    def test_health_check_warns_about_status_command(self) -> None:
+        text = self.HEALTH.read_text()
+        # `openclaw status` is unreliable post-2026-04-25; doctor is the trusted
+        # per-channel signal. Health check must call this out explicitly.
+        self.assertIn("status", text.lower())
+        self.assertIn("doctor is the reliable", text.lower())
+
+    def test_skill_reference_map_points_to_allowlist(self) -> None:
+        text = self.SKILL.read_text()
+        self.assertIn("auto-fix-allowlist.md", text)
+
+
+class BabysitInstallTests(unittest.TestCase):
+    """The install scripts iterate skills/*/, so a new skill must symlink without changes."""
+
+    def test_claude_install_script_includes_babysit_skill(self) -> None:
+        script = ROOT / "scripts" / "install-claude-skill.sh"
+        with tempfile.TemporaryDirectory() as td:
+            dest_dir = pathlib.Path(td) / ".claude" / "skills"
+            env = os.environ.copy()
+            env["HOME"] = td
+            result = subprocess.run(
+                ["/bin/sh", str(script), "--dest", str(dest_dir)],
+                capture_output=True, text=True, env=env,
+            )
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            target = dest_dir / "openclaw-babysit"
+            self.assertTrue(target.is_symlink())
+            self.assertEqual(target.resolve(), ROOT / "skills" / "openclaw-babysit")
+
+    def test_codex_install_script_includes_babysit_skill(self) -> None:
+        script = ROOT / "scripts" / "install-codex-skill.sh"
+        with tempfile.TemporaryDirectory() as td:
+            codex_home = pathlib.Path(td) / "codex-home"
+            env = os.environ.copy()
+            env["HOME"] = td
+            env["CODEX_HOME"] = str(codex_home)
+            result = subprocess.run(["/bin/sh", str(script)], capture_output=True, text=True, env=env)
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            target = codex_home / "skills" / "openclaw-babysit"
+            self.assertTrue(target.is_symlink())
+            self.assertEqual(target.resolve(), ROOT / "skills" / "openclaw-babysit")
+
+    def test_openclaw_install_script_includes_babysit_skill(self) -> None:
+        script = ROOT / "scripts" / "install-openclaw-skill.sh"
+        with tempfile.TemporaryDirectory() as td:
+            env = os.environ.copy()
+            env["HOME"] = td
+            env["OPENCLAW_SKILLS_DIR"] = str(pathlib.Path(td) / "openclaw-skills")
+            result = subprocess.run(["/bin/sh", str(script)], capture_output=True, text=True, env=env)
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            target = pathlib.Path(env["OPENCLAW_SKILLS_DIR"]) / "openclaw-babysit"
+            self.assertTrue(target.is_symlink())
+            self.assertEqual(target.resolve(), ROOT / "skills" / "openclaw-babysit")
